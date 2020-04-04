@@ -17,7 +17,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 It essentially makes it easier for us to access the Request Body objects, 
 especially when it comes to our POST requests. */
 app.use(bodyParser.urlencoded({extended: false}))
-app.use('/users', routesUsers);
+app.use(routesUsers);
 
 
 // Routes that no exists return page not found.
