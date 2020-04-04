@@ -8,7 +8,7 @@ const shopRoutes = require('./routes/shop');
 
 const app = expresss();
 
-app.set('view engine', 'pug');
+app.set('view engine', 'ejs');
 app.set('views', 'views');
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(expresss.static(path.join(__dirname, 'public')));
