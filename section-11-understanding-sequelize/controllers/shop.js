@@ -17,10 +17,10 @@ exports.getProducts = (req, res, next) => {
 
 exports.getProductById = (req, res, next) => {
   const productId = req.params.productId;
-  Product.findById(productId)
-  .then(([product]) => {
+  Product.findByPk(productId)
+  .then((product) => {
     res.render('shop/product-detail', {
-      product: product[0],
+      product: product,
       pageTitle: 'Details Product',
       path: '/products'
     });
