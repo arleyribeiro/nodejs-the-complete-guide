@@ -2,9 +2,9 @@ const db = require('../util/database');
 const Cart = require('./cart');
 
 const fetchAllSql = 'SELECT * FROM products';
-const saveSql = '';
-const findByIdSql = '';
+const findByIdSql = 'SELECT * FROM products WHERE products.id = ?';
 const deleteByIdSql = '';
+const saveSql = 'INSERT INTO node_complete.products (title, price, description, imageUrl) VALUES (?, ?, ?, ?)';
 
 module.exports = class Product {
   constructor(id, title, imageUrl, description, price) {
@@ -16,7 +16,7 @@ module.exports = class Product {
   }
 
   save() {
-    return db.execute(saveSql);
+    return db.execute(saveSql, [this.title, this.price, this.description, this.imageUrl]);
   }
 
   static fetchAll() {
@@ -24,7 +24,7 @@ module.exports = class Product {
   }
 
   static findById(id) {
-    return db.execute(findByIdSql);
+    return db.execute(findByIdSql, [this.id]);
   }
 
   static deleteById(id) {
