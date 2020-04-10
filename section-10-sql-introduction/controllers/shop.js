@@ -17,12 +17,16 @@ exports.getProducts = (req, res, next) => {
 
 exports.getProductById = (req, res, next) => {
   const productId = req.params.productId;
-  Product.findById(productId, product => {
+  Product.findById(productId)
+  .then(([product]) => {
     res.render('shop/product-detail', {
-      product: product,
+      product: product[0],
       pageTitle: 'Details Product',
       path: '/products'
     });
+  })
+  .catch(err => {
+    console.log(err)
   });
 };
 

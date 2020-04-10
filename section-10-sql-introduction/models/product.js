@@ -24,7 +24,7 @@ module.exports = class Product {
   }
 
   static findById(id) {
-    return db.execute(findByIdSql, [this.id]);
+    return db.execute(findByIdSql, [id]);
   }
 
   static deleteById(id) {
