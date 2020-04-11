@@ -62,19 +62,43 @@ exports.getCart = (req, res, next) => {
 
 exports.postCart = (req, res, next) => {
   const productId = req.body.productId;
-  Product.findById(productId, (product) => {
-    Cart.addProduct(productId, product.price);
-  })
-  res.render('shop/cart', {
-    path: '/cart',
-    pageTitle: 'Your Cart',
-    prods: []
-  });
+  let fetchedCart;
+  req.user
+  .getCart()
+    .then(cart => {
+      fetchedCart = cart;
+      return cart.getProducts({ where: { id: productId } });
+    })
+    .then(products => {
+      let product;
+      if (products.length > 0) {
+        product = products[0];
+      }
+      const quantity = 1;
+      if (product) {
+        product.getCartItem()
+      }
+      return Product.findByPk(productId)
+        .then(product => {
+          return fetchedCart.addProduct(product, { 
+            through: { quantity } 
+          });
+        })
+        .catch(err => console.log(err));
+    })
+    .then(() => {
+      res.render('shop/cart', {
+        path: '/cart',
+        pageTitle: 'Your Cart',
+        prods: []
+      });
+    })
+    .catch(err => console.log(err));
 };
 
 exports.postDeleteCart = (req, res, next) => {
   const prodId = req.body.productId;
-  Product.findById(prodId, product => {
+  Product.findByPk(prodId, product => {
     console.log(product, prodId, req.body.productId)
     Cart.deleteProduct(prodId, product.price);
     res.redirect('/cart');
