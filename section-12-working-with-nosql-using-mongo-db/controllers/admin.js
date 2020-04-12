@@ -13,7 +13,7 @@ exports.postAddProduct = (req, res, next) => {
   const imageUrl = req.body.imageUrl;
   const price = req.body.price;
   const description = req.body.description;
-  /* this method was created by sequelize, relationship, belongsTo or hasMany */
+  /*
   req.user.createProduct({
     title: title,
     description: description,
@@ -25,9 +25,10 @@ exports.postAddProduct = (req, res, next) => {
     })
     .catch(err => {
       console.log(err);
-    });
+    });*/
+    res.redirect('/admin/products');
 };
-
+/*
 exports.getEditProduct = (req, res, next) => {
   const editMode = req.query.edit;
   console.log(editMode)
@@ -98,4 +99,4 @@ exports.deleteProduct = (req, res, next) => {
   })
   .catch(err => console.log(err));
   res.redirect('/admin/products');
-};
+};*/
