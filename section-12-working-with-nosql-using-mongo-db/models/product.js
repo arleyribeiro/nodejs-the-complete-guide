@@ -49,13 +49,12 @@ class Product {
       .catch(err => console.log(err));
   }
 
-  static delete (prodId) {
+  static deleteById (prodId) {
     const db = getDb();
     return db.collection('products')
-      .delete({ _id: new mongodb.ObjectId(prodId) })
-      .next()
+      .deleteOne({ _id: new mongodb.ObjectId(prodId) })
       .then(result => {
-
+        console.log('Deleted!');
       })
       .catch(err => console.log(err));
   }
