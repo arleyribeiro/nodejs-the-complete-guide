@@ -31,11 +31,22 @@ class User {
 
     addToCart (product) {
         const db = getDb();
-       /* const cartProduct = this.cart.items.findIndex(cp => {
-            return cp._id === product._id;
-        });*/
-
-        const updatedCart = { items: [{ productId: new ObjectId(product._id), quantity: 1 }] };
+        let quantity = 1;
+        let updatedCartItems = [];
+        let cartProductIndex;
+        if (this.cart && this.cart.items) {
+            cartProductIndex = this.cart.items.findIndex(cp => {
+                return cp.productId.toString() === product._id.toString();
+            });
+            updatedCartItems = [ ...this.cart.items];
+        }
+        if (cartProductIndex >= 0) {
+            quantity += this.cart.items[cartProductIndex].quantity;
+            updatedCartItems[cartProductIndex].quantity = quantity;
+        } else {
+            updatedCartItems.push({ productId: new ObjectId(product._id), quantity: quantity })
+        }
+        const updatedCart = { items: updatedCartItems };
         return db.collection('users')
             .updateOne({ _id: this._id }, { $set: {cart: updatedCart }})
             .then(user => {
