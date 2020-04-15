@@ -1,3 +1,19 @@
+const mongoose = require('mongoose');
+
+const Schema = mongoose.Schema;
+
+const userSchema = new Schema({
+  name: {
+    type: String,
+    required: true
+  },
+  email: {
+    type: String,
+    required: true
+  }
+});
+
+/*
 const mongodb = require('mongodb')
 
 const getDb = require('../util/database').getDb;
@@ -134,5 +150,5 @@ class User {
             .catch(err => console.log(err));
     }
 };
-
-module.exports = User;
+*/
+module.exports = mongoose.model('User', userSchema);

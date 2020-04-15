@@ -8,7 +8,7 @@ const productSchema = new Schema({
     required: true
   },
   price: {
-    type: number,
+    type: Number,
     required: true
   },
   description: {
@@ -22,7 +22,7 @@ const productSchema = new Schema({
 });
 
 
-
+/*
 const mongodb = require('mongodb');
 const getDb = require('../util/database').getDb;
 
@@ -85,6 +85,6 @@ class Product {
       .catch(err => console.log(err));
   }
 
-}
+}*/
 
-module.exports = Product;
+module.exports = mongoose.model('Product', productSchema);
