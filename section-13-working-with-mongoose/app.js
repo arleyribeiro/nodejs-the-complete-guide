@@ -1,10 +1,9 @@
 const path = require('path');
-
 const express = require('express');
 const bodyParser = require('body-parser');
+const mongoose = require('mongoose')
 
 const errorController = require('./controllers/error');
-const mongoConnect = require('./util/database');
 const User = require('./models/user')
 
 const app = express();
@@ -32,6 +31,10 @@ app.use(shopRoutes);
 
 app.use(errorController.get404);
 
-mongoConnect.mongoConnect(() => {
-    app.listen(3000);
-});
+const uri = "mongodb+srv://arley:9IaUYwLsVYJVj5RV@cluster0-mhqji.mongodb.net/shop?retryWrites=true&w=majority";
+mongoose
+    .connect(uri)
+    .then(() => {
+        app.listen(3000);
+    })
+    .catch(err => console.log(err));
