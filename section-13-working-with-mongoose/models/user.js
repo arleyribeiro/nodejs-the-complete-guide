@@ -49,6 +49,14 @@ userSchema.methods.addToCart = function (product) {
     return this.save();
 }
 
+userSchema.methods.removeFromCart = function (productId) {
+    const updatedItemsCart = this.cart.items.filter(product => {
+        return product.productId.toString() !== productId.toString();
+    });
+    this.cart.items = updatedItemsCart;
+    return this.save();
+}
+
 /*
 const mongodb = require('mongodb')
 
