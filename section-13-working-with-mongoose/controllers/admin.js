@@ -3,15 +3,17 @@ const Product = require('../models/product');
 exports.getProducts = (req, res, next) => {
   Product
     .find()
-      .then(products => {
-        console.log("getproducts", products)
-        res.render('admin/products', {
-          prods: products,
-          pageTitle: 'Admin Products',
-          path: '/admin/products'
-        });
-      })
-      .catch(err => console.log(err));
+    // .select('title price -_id')
+    // .populate('userId', 'name')
+    .then(products => {
+      console.log("getproducts", products)
+      res.render('admin/products', {
+        prods: products,
+        pageTitle: 'Admin Products',
+        path: '/admin/products'
+      });
+    })
+    .catch(err => console.log(err));
 };
 
 exports.getAddProduct = (req, res, next) => {

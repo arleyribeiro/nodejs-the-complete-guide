@@ -28,6 +28,27 @@ const userSchema = new Schema({
   }
 });
 
+userSchema.methods.addToCart = function (product) {
+    let quantity = 1;
+    let updatedCartItems = [];
+    let cartProductIndex;
+    if (this.cart && this.cart.items) {
+        cartProductIndex = this.cart.items.findIndex(cp => {
+            return cp.productId.toString() === product._id.toString();
+        });
+        updatedCartItems = [ ...this.cart.items];
+    }
+    if (cartProductIndex >= 0) {
+        quantity += this.cart.items[cartProductIndex].quantity;
+        updatedCartItems[cartProductIndex].quantity = quantity;
+    } else {
+        updatedCartItems.push({ productId: product._id, quantity: quantity })
+    }
+    const updatedCart = { items: updatedCartItems };
+    this.cart = updatedCart;
+    return this.save();
+}
+
 /*
 const mongodb = require('mongodb')
 
@@ -60,31 +81,7 @@ class User {
                 .catch(err => console.log(err));
     }
 
-    addToCart (product) {
-        const db = getDb();
-        let quantity = 1;
-        let updatedCartItems = [];
-        let cartProductIndex;
-        if (this.cart && this.cart.items) {
-            cartProductIndex = this.cart.items.findIndex(cp => {
-                return cp.productId.toString() === product._id.toString();
-            });
-            updatedCartItems = [ ...this.cart.items];
-        }
-        if (cartProductIndex >= 0) {
-            quantity += this.cart.items[cartProductIndex].quantity;
-            updatedCartItems[cartProductIndex].quantity = quantity;
-        } else {
-            updatedCartItems.push({ productId: new ObjectId(product._id), quantity: quantity })
-        }
-        const updatedCart = { items: updatedCartItems };
-        return db.collection('users')
-            .updateOne({ _id: this._id }, { $set: {cart: updatedCart }})
-            .then(user => {
-                return user;
-            })
-            .catch(err => console.log(err));
-    }
+    
 
     getCart() {
         const db = getDb();
