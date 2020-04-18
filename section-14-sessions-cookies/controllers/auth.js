@@ -6,12 +6,12 @@ exports. getLogin = (req, res, next) => {
     });
 };
 
-exports. postLogin = (req, res, next) => {
-    res.setHeader('Set-Cookie', 'loggedIn=true; HttpOnly');
+exports. postLogin = (req, res, next) => {    
+    req.session.isLoggedIn = true;
     res.redirect('/');
 };
 
 exports. postLogOut = (req, res, next) => {
-    res.setHeader('Set-Cookie', 'loggedIn=false');
+    req.session.isLoggedIn = false;
     res.redirect('/logout');
 }
