@@ -8,15 +8,19 @@ exports. getLogin = (req, res, next) => {
     });
 };
 
-exports. postLogin = (req, res, next) => {    
-    User.findById('5e981b3639f1061f258aa9ae')
+exports. postLogin = (req, res, next) => {
+    const email = req.body.email;
+    const password = req.body.password;
+    User.findOne({ email: email })
     .then(user => {
-        req.session.isLoggedIn = true;
-        req.session.user = user;
-        req.session.save(err => {
-            console.log(err);
-            res.redirect('/');
-        });
+        if (user && user.password === password) {
+            req.session.isLoggedIn = true;
+            req.session.user = user;
+            req.session.save(err => {
+                console.log(err);
+                res.redirect('/');
+            });
+        }
     })
     .catch(err => console.log(err));
 };
@@ -36,16 +40,28 @@ exports. getSignup = (req, res, next) => {
     });
 };
 
-exports. postSignup = (req, res, next) => {    
-    /*User.findById('5e981b3639f1061f258aa9ae')
-    .then(user => {
-        req.session.isLoggedIn = true;
-        req.session.user = user;
-        req.session.save(err => {
-            console.log(err);
-            res.redirect('/login');
-        });
+exports. postSignup = (req, res, next) => {
+    const email = req.body.email;
+    const password = req.body.password;
+    const confirmPassword = req.confirmPassword;
+
+    User.findOne({ email: email })
+    .then(userDoc => {
+        if (userDoc) {
+            return res.redirect('/');
+        } else {
+            const user = new User({
+                email: email,
+                password: password,
+                cart: { items: [] }
+            });
+            return user.save();
+        }
     })
-    .catch(err => console.log(err));*/
-    res.redirect('/login');
+    .then(user => {
+        if (user) {
+            res.redirect('/login')
+        }
+    })
+    .catch(err => console.log(err));
 };
