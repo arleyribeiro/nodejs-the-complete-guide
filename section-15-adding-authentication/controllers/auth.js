@@ -14,14 +14,26 @@ exports. postLogin = (req, res, next) => {
     const password = req.body.password;
     User.findOne({ email: email })
     .then(user => {
-        if (user && user.password === password) {
-            req.session.isLoggedIn = true;
-            req.session.user = user;
-            req.session.save(err => {
-                console.log(err);
-                res.redirect('/');
-            });
+        if (!user) {
+            return res.redirect('/login');
         }
+        bcrypt.compare(password, user.password)
+            .then(doMatch => {
+                if (doMatch) {
+                    req.session.isLoggedIn = true;
+                    req.session.user = user;
+                    return req.session.save(err => {
+                        console.log(err);
+                        res.redirect('/');
+                    });
+                } else {
+                    res.redirect('/login');
+                }
+            })
+            .catch(err => { 
+                console.log(err);
+                res.redirect('/login');
+            });
     })
     .catch(err => console.log(err));
 };
@@ -51,20 +63,20 @@ exports. postSignup = (req, res, next) => {
         if (userDoc) {
             return res.redirect('/');
         }
-        return bcrypt.hash(password, 12);
-    })
-    .then(hashPassword => {
-        const user = new User({
-            email: email,
-            password: hashPassword,
-            cart: { items: [] }
-        });
-        return user.save();
-    })
-    .then(user => {
-        if (user) {
-            res.redirect('/login')
-        }
+        return bcrypt.hash(password, 12)
+            .then(hashPassword => {
+                const user = new User({
+                    email: email,
+                    password: hashPassword,
+                    cart: { items: [] }
+                });
+                return user.save();
+            })
+            .then(user => {
+                if (user) {
+                    res.redirect('/login')
+                }
+            });
     })
     .catch(err => console.log(err));
 };
