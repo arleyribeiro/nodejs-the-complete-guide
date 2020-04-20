@@ -30,7 +30,9 @@
                                     <form action="/products/<%= product._id %>" method="GET">
                                         <button class="btn">Details</button>
                                     </form>
-                                    <%- include('../includes/add-to-cart.ejs', {product: product}) %>
+                                    <% if (isAuthenticated) { %>
+                                        <%- include('../includes/add-to-cart.ejs', {product: product}) %>
+                                    <% } %>
                                 </div>
                             </article>
                             <% } %>
