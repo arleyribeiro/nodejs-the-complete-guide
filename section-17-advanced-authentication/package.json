@@ -13,6 +13,7 @@
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.19.0",
     "connect-flash": "^0.1.1",
+    "crypto": "^1.0.1",
     "csurf": "^1.11.0",
     "ejs": "^3.0.2",
     "express": "^4.17.1",
@@ -21,6 +22,7 @@
     "mongoose": "^5.9.9",
     "nodemailer": "^6.4.6",
     "pug": "^2.0.4",
+    "secure-random": "^1.1.2",
     "sequelize": "^5.21.6"
   },
   "devDependencies": {
