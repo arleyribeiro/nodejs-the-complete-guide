@@ -7,8 +7,8 @@ const secureRandom = require('secure-random');
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-           user: 'youremail@address.com',
-           pass: 'yourpassword'
+           user: 'coursenodejstest@gmail.com',
+           pass: ''
        }
    });
 
@@ -95,7 +95,7 @@ exports. postSignup = (req, res, next) => {
                     res.redirect('/login');
                     return transporter.sendMail({
                         to: email,
-                        from: 'shop@node-complete.com',
+                        from: 'coursenodejstest@gmail.com',
                         subject: 'Signup succeeded!',
                         html: '<h1>You successfully signed up!</h1>'
                     }, (err, info) => {
@@ -141,7 +141,7 @@ exports.postReset = (req, res, next) => {
                         res.redirect('/');                    
                         return transporter.sendMail({
                             to: req.body.email,
-                            from: 'shop@node-complete.com',
+                            from: 'coursenodejstest@gmail.com',
                             subject: 'Reset!',
                             html: `<p> You required a password reset</p>
                                     <p> Click this <a href="http://localhost:3000/reset/${token}">link</a> to set a new password.</p>`
@@ -160,3 +160,40 @@ exports.postReset = (req, res, next) => {
     }
 };
 
+exports. getNewPassword = (req, res, next) => {
+    const token = req.params.token;
+    User.findOne({ resetToken: token, resetTokenExpiration: { $gt: Date.now() } })
+    .then(user => {
+        if (!user) {
+            return res.redirect('/');
+        }
+        let message = req.flash('error');
+        message = message.length > 0 ? message[0] : null;
+        res.render('auth/new-password', {
+            path: '/new-password',
+            pageTitle: 'New Password',
+            errorMessage: message,
+            userId: user._id.toString()
+        });
+    })
+    .catch(err => console.log(err));
+};
+
+exports. getNewPassword = (req, res, next) => {
+    const token = req.params.token;
+    User.findOne({ resetToken: token, resetTokenExpiration: { $gt: Date.now() } })
+    .then(user => {
+        if (!user) {
+            return res.redirect('/');
+        }
+        let message = req.flash('error');
+        message = message.length > 0 ? message[0] : null;
+        res.render('auth/new-password', {
+            path: '/new-password',
+            pageTitle: 'New Password',
+            errorMessage: message,
+            userId: user._id.toString()
+        });
+    })
+    .catch(err => console.log(err));
+};
