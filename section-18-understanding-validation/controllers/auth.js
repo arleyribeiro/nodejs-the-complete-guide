@@ -82,7 +82,7 @@ exports. postSignup = (req, res, next) => {
                 .render('auth/signup', {
                     path: '/signup',
                     pageTitle: 'Signup',
-                    errorMessage: errors.array()
+                    errorMessage: errors.array.map(error => error.param === 'email')
                 });
     }
  
