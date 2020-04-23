@@ -2,6 +2,7 @@ const bcrypt = require('bcryptjs');
 const nodemailer = require('nodemailer');
 const secureRandom = require('secure-random');
 const { validationResult } = require('express-validator/check');
+const { check, body } = require('express-validator/check')
 
 const User = require('../models/user');
 
@@ -13,7 +14,7 @@ const transporter = nodemailer.createTransport({
        }
    });
 
-exports. getLogin = (req, res, next) => {
+exports.getLogin = (req, res, next) => {
     let message = req.flash('error');
     message = message.length > 0 ? message[0] : null;
     res.render('auth/login', {
@@ -23,9 +24,9 @@ exports. getLogin = (req, res, next) => {
     });
 };
 
-exports. postLogin = (req, res, next) => {
-    const email = req.body.email;
-    const password = req.body.password;
+exports.postLogin = (req, res, next) => {
+    const { email, password } = req.body;
+
     User.findOne({ email: email })
     .then(user => {
         if (!user) {
@@ -54,14 +55,14 @@ exports. postLogin = (req, res, next) => {
     .catch(err => console.log(err));
 };
 
-exports. postLogout = (req, res, next) => {
+exports.postLogout = (req, res, next) => {
     req.session.destroy((err) => {
         console.log(err);
         res.redirect('/');
     });
 }
 
-exports. getSignup = (req, res, next) => {
+exports.getSignup = (req, res, next) => {
     let message = req.flash('error');
     message = message.length > 0 ? message[0] : null;
     res.render('auth/signup', {
@@ -71,62 +72,51 @@ exports. getSignup = (req, res, next) => {
     });
 };
 
-exports. postSignup = (req, res, next) => {
-    const email = req.body.email;
-    const password = req.body.password;
-    const confirmPassword = req.confirmPassword;
+exports.postSignup = (req, res, next) => {
+    const { email, password, confirmPassword } = req.body;
     const errors = validationResult(req);
-    if (errors) {
+    if (!errors.isEmpty()) {
+        let errorMessage = {};
+        errors.array().forEach(error => {
+            errorMessage[error.param] = error;
+        })
+        console.log("errorMessage", errorMessage)
         return res
                 .status(402)
                 .render('auth/signup', {
                     path: '/signup',
                     pageTitle: 'Signup',
-                    errorMessage: errors.array().map(error => {
-                        if (error.param == 'email') {
-                            return error.msg;
-                        }
-                    })
+                    errorMessage: errorMessage
                 });
     }
  
-    User.findOne({ email: email })
-    .then(userDoc => {
-        if (userDoc) {
-            req.flash('error', 'E-mail exists already pick a different one.');
-            return res.redirect('/');
-        }
-        return bcrypt.hash(password, 12)
-            .then(hashPassword => {
-                const user = new User({
-                    email: email,
-                    password: hashPassword,
-                    cart: { items: [] }
-                });
-                return user.save();
-            })
-            .then(user => {
-                if (user) {
-                    res.redirect('/login');
-                    return transporter.sendMail({
-                        to: email,
-                        from: 'coursenodejstest@gmail.com',
-                        subject: 'Signup succeeded!',
-                        html: '<h1>You successfully signed up!</h1>'
-                    }, (err, info) => {
-                        if (err) {
-                            console.log(err);                            
-                        } else {
-                            console.log(info);
-                        }
-                    });
-                }
-            })
-            .catch(err => {
-              console.log(err);
+    bcrypt
+        .hash(password, 12)
+        .then(hashPassword => {
+            const user = new User({
+                email: email,
+                password: hashPassword,
+                cart: { items: [] }
             });
-    })
-    .catch(err => console.log(err));
+            return user.save();
+        })
+        .then(user => {
+            if (user) {
+                res.redirect('/login');
+                return transporter.sendMail({
+                    to: email,
+                    from: 'coursenodejstest@gmail.com',
+                    subject: 'Signup succeeded!',
+                    html: '<h1>You successfully signed up!</h1>'
+                }, (err, info) => {
+                    if (err) {
+                        console.log(err);                            
+                    } else {
+                        console.log(info);
+                    }
+                });
+            }
+        });
 };
 
 exports.getReset = (req, res, next) => {
@@ -175,7 +165,7 @@ exports.postReset = (req, res, next) => {
     }
 };
 
-exports. getNewPassword = (req, res, next) => {
+exports.getNewPassword = (req, res, next) => {
     const token = req.params.token;
     User.findOne({ resetToken: token, resetTokenExpiration: { $gt: Date.now() } })
     .then(user => {
@@ -195,10 +185,9 @@ exports. getNewPassword = (req, res, next) => {
     .catch(err => console.log(err));
 };
 
-exports. postNewPassword = (req, res, next) => {
-    const userId = req.body.userId;
-    const newPassword = req.body.password;
-    const passwordToken = req.body.passwordToken;
+exports.postNewPassword = (req, res, next) => {
+    const { userId, newPassword, passwordToken } = req.body;
+
     let resetUser;
     User.findOne({ _id: userId, resetToken: passwordToken, resetTokenExpiration: { $gt: Date.now() } })
     .then(user => {
@@ -216,3 +205,34 @@ exports. postNewPassword = (req, res, next) => {
     })
     .catch(err => console.log(err));
 };
+
+exports.validate = (method) => {
+    if (method === 'postSignup') {
+        return [
+            check('email')
+                .isEmail()
+                .withMessage("Please enter a valid email.")
+                .custom((value, { req }) => {
+                    return User
+                            .findOne({ email: value })
+                            .then(userDoc => {
+                                if (userDoc) {
+                                    return Promise.redirect('E-mail exists already pick a different one.');
+                                }
+                            });
+                }),
+            body('password',
+                'Please enter a password with only numbers and text and at least 5 characters.'
+                )
+                .isLength({ min: 6})
+                .isAlphanumeric(),
+            body('confirmPassword')
+                .custom((value, { req }) => {
+                    if (value !== req.body.password) {
+                        throw new Error('Passwords have to match!')
+                    }
+                    return true;
+                })
+        ]
+    }
+}

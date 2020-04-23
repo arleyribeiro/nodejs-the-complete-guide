@@ -233,6 +233,10 @@ form {
   background-color: red;  
 }
 
+.message-error-inline {
+  color: red;
+}
+
 @media (min-width: 768px) {
   .main-header__nav {
     display: flex;

@@ -7,22 +7,28 @@
    <%- include('../includes/navigation.ejs') %>
 
     <main>
-        <% if (errorMessage) { %>
-            <div class="user-message user-message--error"><%= errorMessage %></div>
-        <% } %>
         <form class="login-form" action="/signup" method="POST" novalidate>
             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <div class="form-control">
                 <label for="email">E-mail</label>
                 <input type="email" name="email" id="email">
+                <% if (errorMessage && errorMessage.email) { %>
+                    <div class="message-error-inline"><%= errorMessage.email.msg %></div>
+                <% } %>
             </div>
             <div class="form-control">
                 <label for="password">Password</label>
                 <input type="password" name="password" id="password">
+                <% if (errorMessage && errorMessage.password) { %>
+                    <div class="message-error-inline"><%= errorMessage.password.msg %></div>
+                <% } %>
             </div>
             <div class="form-control">
                     <label for="password">Confirm Password</label>
                     <input type="password" name="confirmPassword" id="confirmPassword">
+                    <% if (errorMessage && errorMessage.confirmPassword) { %>
+                        <div class="message-error-inline"><%= errorMessage.confirmPassword.msg %></div>
+                    <% } %>
                 </div>
             <button class="btn" type="submit">
                 Signup
