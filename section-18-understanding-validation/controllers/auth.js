@@ -76,13 +76,17 @@ exports. postSignup = (req, res, next) => {
     const password = req.body.password;
     const confirmPassword = req.confirmPassword;
     const errors = validationResult(req);
-    if (!errors) {
+    if (errors) {
         return res
                 .status(402)
                 .render('auth/signup', {
                     path: '/signup',
                     pageTitle: 'Signup',
-                    errorMessage: errors.array.map(error => error.param === 'email')
+                    errorMessage: errors.array().map(error => {
+                        if (error.param == 'email') {
+                            return error.msg;
+                        }
+                    })
                 });
     }
  
