@@ -1,8 +1,8 @@
 const bcrypt = require('bcryptjs');
 const nodemailer = require('nodemailer');
 const secureRandom = require('secure-random');
-const { validationResult } = require('express-validator/check');
-const { check, body } = require('express-validator/check')
+const { validationResult } = require('express-validator');
+const { check, body } = require('express-validator')
 
 const User = require('../models/user');
 
@@ -20,39 +20,61 @@ exports.getLogin = (req, res, next) => {
     res.render('auth/login', {
         path: '/login',
         pageTitle: 'Login',
-        errorMessage: message
+        errorMessage: message,
+        oldInput: {
+            email: "",
+            password: ""
+        }
     });
 };
 
 exports.postLogin = (req, res, next) => {
     const { email, password } = req.body;
-
-    User.findOne({ email: email })
-    .then(user => {
-        if (!user) {
-            req.flash('error', 'Invalid email or password.');
-            return res.redirect('/login');
-        }
-        bcrypt.compare(password, user.password)
-            .then(doMatch => {
-                if (doMatch) {
-                    req.session.isLoggedIn = true;
-                    req.session.user = user;
-                    return req.session.save(err => {
-                        console.log(err);
-                        res.redirect('/');
-                    });
-                } else {
-                    req.flash('error', 'Invalid email or password.');
-                    res.redirect('/login');
-                }
-            })
-            .catch(err => { 
-                console.log(err);
+    const errors = validationResult(req);
+    console.log("errors", errors)
+    if (!errors.isEmpty()) {
+        let errorMessage = {};
+        errors.array().forEach(error => {
+            errorMessage[error.param] = error.msg;
+        })
+        console.log("errorMessage", errorMessage)
+        return res
+                .status(402)
+                .render('auth/login', {
+                    path: '/login',
+                    pageTitle: 'Login',
+                    errorMessage: errorMessage,
+                    oldInput: {
+                        email: email ? email : "",
+                        password: password ? password : ""
+                    }
+                });
+    }
+ User.findOne({ email: email})
+ .then(user => {
+    bcrypt.compare(password, user.password)
+        .then(doMatch => {
+            if (doMatch) {
+                req.session.isLoggedIn = true;
+                req.session.user = user;
+                return req.session.save(err => {
+                    console.log(err);
+                    res.redirect('/');
+                });
+            } else {
+                req.flash('error', 'Invalid email or password.');
                 res.redirect('/login');
-            });
+            }
+        })
+        .catch(err => { 
+            console.log(err);
+            res.redirect('/login');
+        });
     })
-    .catch(err => console.log(err));
+    .catch(err => { 
+        console.log(err);
+        res.redirect('/login');
+    });
 };
 
 exports.postLogout = (req, res, next) => {
@@ -68,7 +90,12 @@ exports.getSignup = (req, res, next) => {
     res.render('auth/signup', {
         path: '/signup',
         pageTitle: 'Signup',
-        errorMessage: message
+        errorMessage: message,
+        oldInput: {
+            email: "",
+            password: "",
+            confirmPassword: ""
+        }
     });
 };
 
@@ -78,7 +105,7 @@ exports.postSignup = (req, res, next) => {
     if (!errors.isEmpty()) {
         let errorMessage = {};
         errors.array().forEach(error => {
-            errorMessage[error.param] = error;
+            errorMessage[error.param] = error.msg;
         })
         console.log("errorMessage", errorMessage)
         return res
@@ -86,7 +113,12 @@ exports.postSignup = (req, res, next) => {
                 .render('auth/signup', {
                     path: '/signup',
                     pageTitle: 'Signup',
-                    errorMessage: errorMessage
+                    errorMessage: errorMessage,
+                    oldInput: {
+                        email: email,
+                        password: password,
+                        confirmPassword: confirmPassword
+                    }
                 });
     }
  
@@ -206,33 +238,53 @@ exports.postNewPassword = (req, res, next) => {
     .catch(err => console.log(err));
 };
 
-exports.validate = (method) => {
-    if (method === 'postSignup') {
-        return [
-            check('email')
-                .isEmail()
-                .withMessage("Please enter a valid email.")
-                .custom((value, { req }) => {
-                    return User
-                            .findOne({ email: value })
-                            .then(userDoc => {
-                                if (userDoc) {
-                                    return Promise.redirect('E-mail exists already pick a different one.');
-                                }
-                            });
-                }),
+exports.validateSignUp = () => {
+    return [
+        check('email')
+            .isEmail()
+            .withMessage("Please enter a valid email.")
+            .custom((value, { req }) => {
+                return User
+                        .findOne({ email: value })
+                        .then(userDoc => {
+                            if (userDoc) {
+                                return Promise.redirect('E-mail exists already pick a different one.');
+                            }
+                        });
+            }),
+        body('password',
+            'Please enter a password with only numbers and text and at least 5 characters.'
+            )
+            .isLength({ min: 2})
+            .isAlphanumeric(),
+        body('confirmPassword')
+            .custom((value, { req }) => {
+                if (value !== req.body.password) {
+                    throw new Error('Passwords have to match!')
+                }
+                return true;
+            })
+    ];
+}
+
+exports.validateLogin = () => {
+    return [
+        body('email')
+            .isEmail()
+            .withMessage("Please enter a valid email.")
+            .custom((value, { req }) => {
+                return User
+                        .findOne({ email: value })
+                        .then(user => {
+                            if (!user) {
+                                return Promise.reject('Please enter a valid email.');
+                            }
+                        });
+            }),
             body('password',
-                'Please enter a password with only numbers and text and at least 5 characters.'
-                )
-                .isLength({ min: 6})
-                .isAlphanumeric(),
-            body('confirmPassword')
-                .custom((value, { req }) => {
-                    if (value !== req.body.password) {
-                        throw new Error('Passwords have to match!')
-                    }
-                    return true;
-                })
-        ]
-    }
+            'Please enter a valid password.'
+            )
+            .isLength({ min: 2})
+            .isAlphanumeric()
+    ];
 }
