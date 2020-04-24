@@ -1,3 +1,5 @@
+const { validationResult, body } = require('express-validator')
+
 const Product = require('../models/product');
 
 exports.getProducts = (req, res, next) => {
@@ -20,16 +22,37 @@ exports.getAddProduct = (req, res, next) => {
   res.render('admin/edit-product', {
     pageTitle: 'Add Product',
     path: '/admin/add-product',
-    editing: false
+    editing: false,
+    errorMessage: [],
+    hasError: false
   });
 };
 
 exports.postAddProduct = (req, res, next) => {
-  const title = req.body.title;
-  const imageUrl = req.body.imageUrl;
-  const price = req.body.price;
-  const description = req.body.description;
-  //const userId = req.user._id;
+  const { title, imageUrl, price, description } = req.body;
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+      let errorMessage = {};
+      errors.array().forEach(error => {
+          errorMessage[error.param] = error.msg;
+      })
+      console.log("errorMessage", errorMessage)
+      return res
+              .status(402)
+              .render('admin/edit-product', {
+                  pageTitle: 'Add Product',
+                  path: '/admin/add-product',
+                  errorMessage: errorMessage,
+                  editing: false,
+                  hasError: true,
+                  product: {
+                    title: title,
+                    imageUrl: imageUrl,
+                    price: price,
+                    description: description
+                  }
+              });
+  }
 
   const product = new Product({
     title: title, 
@@ -67,18 +90,46 @@ exports.getEditProduct = (req, res, next) => {
           pageTitle: 'Edit Product',
           path: '/admin/edit-product',
           editing: editMode,
-          product: product
+          product: product,
+          errorMessage: [],
+          hasError: true,
+          product: {
+            title: '',
+            imageUrl: '',
+            price: '',
+            description: ''
+          }
         });
       })
       .catch(err => console.log(err));
 };
 
 exports.postEditProduct = (req, res, next) => {
-  const prodId = req.body.productId;
-  const title = req.body.title;
-  const imageUrl = req.body.imageUrl;
-  const price = req.body.price;
-  const description = req.body.description;
+  const { prodId, title, imageUrl, price, description } = req.body;
+
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+      let errorMessage = {};
+      errors.array().forEach(error => {
+          errorMessage[error.param] = error.msg;
+      })
+      console.log("errorMessage", errorMessage)
+      return res
+              .status(402)
+              .render('admin/edit-product', {
+                  pageTitle: 'Add Product',
+                  path: '/admin/add-product',
+                  errorMessage: errorMessage,
+                  hasError: true,
+                  editing: false,
+                  product: {
+                    title: title,
+                    imageUrl: imageUrl,
+                    price: price,
+                    description: description
+                  }
+              });
+  }
 
   Product
     .findById(prodId)
@@ -111,3 +162,17 @@ exports.deleteProduct = (req, res, next) => {
     })
     .catch(err => console.log(err));
 };
+
+exports.validateProduct = () => {
+  return [
+    body('title', 'Please enter a valid title just letter and digits')
+      .isString()
+      .isLength({ min: 3})
+      .trim(),
+    body('imageUrl', 'Url invalid').isURL(),
+    body('price', 'Price is invalid').isFloat(),
+    body('description')
+      .isLength({min: 5, max: 1000})
+      .withMessage('Description is more characters with permited.')
+  ];
+}

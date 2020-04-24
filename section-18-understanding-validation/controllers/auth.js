@@ -266,6 +266,7 @@ exports.validateSignUp = () => {
                 }
                 return true;
             })
+            .trim()
     ];
 }
 
