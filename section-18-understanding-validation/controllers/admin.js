@@ -92,20 +92,14 @@ exports.getEditProduct = (req, res, next) => {
           editing: editMode,
           product: product,
           errorMessage: [],
-          hasError: true,
-          product: {
-            title: '',
-            imageUrl: '',
-            price: '',
-            description: ''
-          }
+          hasError: true
         });
       })
       .catch(err => console.log(err));
 };
 
 exports.postEditProduct = (req, res, next) => {
-  const { prodId, title, imageUrl, price, description } = req.body;
+  const { productId, title, imageUrl, price, description } = req.body;
 
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -117,12 +111,13 @@ exports.postEditProduct = (req, res, next) => {
       return res
               .status(402)
               .render('admin/edit-product', {
-                  pageTitle: 'Add Product',
-                  path: '/admin/add-product',
+                  pageTitle: 'Edit Product',
+                  path: '/admin/edit-product',
                   errorMessage: errorMessage,
                   hasError: true,
-                  editing: false,
+                  editing: true,
                   product: {
+                    _id: productId,
                     title: title,
                     imageUrl: imageUrl,
                     price: price,
@@ -132,8 +127,9 @@ exports.postEditProduct = (req, res, next) => {
   }
 
   Product
-    .findById(prodId)
+    .findById(productId)
     .then(product => {
+      console.log("PRODUCT", product, productId)
       if (product.userId.toString() !== req.user._id.toString()) {
         return res.redirect('/');
       }
@@ -142,10 +138,7 @@ exports.postEditProduct = (req, res, next) => {
       product.price = price;
       product.description = description;
 
-      return product.save()
-      .then(() => {
-        res.redirect('/admin/products');
-      });
+      return product.save();
     })
     .then(() => {
       res.redirect('/admin/products');
