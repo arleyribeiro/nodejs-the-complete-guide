@@ -251,12 +251,14 @@ exports.validateSignUp = () => {
                                 return Promise.redirect('E-mail exists already pick a different one.');
                             }
                         });
-            }),
+            })
+            .normalizeEmail(),
         body('password',
             'Please enter a password with only numbers and text and at least 5 characters.'
             )
             .isLength({ min: 2})
-            .isAlphanumeric(),
+            .isAlphanumeric()
+            .trim(),
         body('confirmPassword')
             .custom((value, { req }) => {
                 if (value !== req.body.password) {
@@ -280,11 +282,13 @@ exports.validateLogin = () => {
                                 return Promise.reject('Please enter a valid email.');
                             }
                         });
-            }),
-            body('password',
+            })
+            .normalizeEmail(),
+        body('password',
             'Please enter a valid password.'
             )
             .isLength({ min: 2})
             .isAlphanumeric()
+            .trim()
     ];
 }
