@@ -42,7 +42,7 @@ exports.postAddProduct = (req, res, next) => {
       })
       console.log("errorMessage", errorMessage)
       return res
-              .status(402)
+              .status(422)
               .render('admin/edit-product', {
                   pageTitle: 'Add Product',
                   path: '/admin/add-product',
@@ -119,7 +119,7 @@ exports.postEditProduct = (req, res, next) => {
       })
       console.log("errorMessage", errorMessage)
       return res
-              .status(402)
+              .status(422)
               .render('admin/edit-product', {
                   pageTitle: 'Edit Product',
                   path: '/admin/edit-product',
