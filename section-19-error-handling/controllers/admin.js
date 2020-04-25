@@ -2,6 +2,8 @@ const { validationResult, body } = require('express-validator')
 
 const Product = require('../models/product');
 
+const mongoose = require('mongoose')
+
 exports.getProducts = (req, res, next) => {
   Product
     .find({ userId: req.user._id })
@@ -55,6 +57,7 @@ exports.postAddProduct = (req, res, next) => {
   }
 
   const product = new Product({
+    _id: new mongoose.ObjectId("5e9d83a8f52e2b47ef4bbc49"),
     title: title, 
     price: price, 
     description: description, 
@@ -69,7 +72,9 @@ exports.postAddProduct = (req, res, next) => {
         res.redirect('/admin/products');
       })
       .catch(err => {
-        res.redirect('/500');
+        const error = new Error(err);
+        error.httpStatusCode = 500;
+        return next(error);
       });
 };
 
@@ -82,7 +87,7 @@ exports.getEditProduct = (req, res, next) => {
   const prodId = req.params.productId;
   Product
     .findById(prodId)
-      .then(product => {
+    .then(product => {
         if (!product) {
           return res.redirect('/');
         }
@@ -95,7 +100,11 @@ exports.getEditProduct = (req, res, next) => {
           hasError: true
         });
       })
-      .catch(err => console.log(err));
+      .catch(err => {
+        const error = new Error(err);
+        error.httpStatusCode = 500;
+        return next(error);
+      });
 };
 
 exports.postEditProduct = (req, res, next) => {
