@@ -37,8 +37,18 @@ const filesStorage = multer.diskStorage({
     }
 });
 
+const fileFilter = (req, file, cb) => {
+    if (file.mimetype ===  'image/png' || 
+        file.mimetype ===  'image/jpg' ||
+        file.mimetype ===  'image/jpeg') {
+        cb(null, true);
+    } else {
+        cb(null, false);
+    }
+};
+
 app.use(bodyParser.urlencoded({ extended: false }));
-app.use(multer({ storage: filesStorage }).single('image'));
+app.use(multer({ storage: filesStorage, fileFilter: fileFilter }).single('image'));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(session({ 
         secret: 'my secret but that is not secret', 
