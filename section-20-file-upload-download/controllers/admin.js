@@ -33,7 +33,7 @@ exports.getAddProduct = (req, res, next) => {
 };
 
 exports.postAddProduct = (req, res, next) => {
-  const { title, imageUrl, price, description } = req.body;
+  const { title, image, price, description } = req.body;
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
       let errorMessage = {};
@@ -51,7 +51,7 @@ exports.postAddProduct = (req, res, next) => {
                   hasError: true,
                   product: {
                     title: title,
-                    imageUrl: imageUrl,
+                    imageUrl: image,
                     price: price,
                     description: description
                   }
@@ -144,7 +144,7 @@ exports.postEditProduct = (req, res, next) => {
         return res.redirect('/');
       }
       product.title = title;
-      product.imageUrl = imageUrl;
+      product.imageUrl = image;
       product.price = price;
       product.description = description;
 
@@ -180,7 +180,6 @@ exports.validateProduct = () => {
       .isString()
       .isLength({ min: 3})
       .trim(),
-    body('imageUrl', 'Url invalid').isURL(),
     body('price', 'Price is invalid').isFloat(),
     body('description')
       .isLength({min: 5, max: 1000})
