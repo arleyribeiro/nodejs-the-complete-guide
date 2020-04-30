@@ -41,7 +41,7 @@ exports.getProductById = (req, res, next) => {
 };
 
 exports.getIndex = (req, res, next) => {
-  const page = req.query.page;
+  const page = +req.query.page || 1;
   const skip = (page - 1) * ITEM_PER_PAGE;
   let totalItems = 0;
 
@@ -58,7 +58,7 @@ exports.getIndex = (req, res, next) => {
         prods: products,
         pageTitle: 'Shop',
         path: '/',
-        totalProducts: totalItems,
+        currentPage: page,
         hasNextPage: ITEM_PER_PAGE * page < totalItems,
         hasPreviousPage: page > 1,
         nextPage: page + 1,
