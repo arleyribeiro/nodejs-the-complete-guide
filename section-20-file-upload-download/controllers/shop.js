@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const PDFDocument = require('pdfkit');
 
 const Product = require('../models/product');
 const Order = require('../models/order');
@@ -171,18 +172,30 @@ exports.getInvoice = (req, res, next) => {
       }
       const fileName = `invoice-${orderId}.pdf`;
       const invoicePath = path.join('data', 'invoices', fileName);
-      /* fs.readFile(invoicePath, (err, data) => {
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Dispostion', `inline; filename=${fileName}`);
+      const pdfDoc = new PDFDocument();
+      pdfDoc.pipe(fs.createWriteStream(invoicePath));
+      pdfDoc.pipe(res);
+      pdfDoc.text("Hello word");
+      pdfDoc.end();
+      /* 
+      // aproach for tiny files - preloading files in memory - bad way for big files
+      fs.readFile(invoicePath, (err, data) => {
         if (err) {
           next(err);
         }
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Dispostion', `attachment; filename=${fileName}`);
         res.send(data);
-      }); */
+      }); 
+
+      // Streaming data - best way
       const file = fs.createReadStream(invoicePath);
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Dispostion', `inline; filename=${fileName}`);
-      file.pipe(res);
+      file.pipe(res);*/
     })
     .catch(err => {
       next(err);
