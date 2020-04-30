@@ -43,14 +43,27 @@ exports.getProductById = (req, res, next) => {
 exports.getIndex = (req, res, next) => {
   const page = req.query.page;
   const skip = (page - 1) * ITEM_PER_PAGE;
+  let totalItems = 0;
+
   Product.find()
-    .skip(skip)
-    .limit(ITEM_PER_PAGE)
+  .countDocuments()
+    .then(numDocuments => {
+      totalItems = numDocuments;
+      return Product.find()
+          .skip(skip)
+          .limit(ITEM_PER_PAGE);
+    })
     .then((products) => {
       res.render('shop/index', {
         prods: products,
         pageTitle: 'Shop',
-        path: '/'
+        path: '/',
+        totalProducts: totalItems,
+        hasNextPage: ITEM_PER_PAGE * page < totalItems,
+        hasPreviousPage: page > 1,
+        nextPage: page + 1,
+        previousPage: page - 1,
+        lastPage: Math.ceil(totalItems / ITEM_PER_PAGE)
       });
     })
     .catch(err => {
