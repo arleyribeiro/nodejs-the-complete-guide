@@ -178,7 +178,18 @@ exports.getInvoice = (req, res, next) => {
       const pdfDoc = new PDFDocument();
       pdfDoc.pipe(fs.createWriteStream(invoicePath));
       pdfDoc.pipe(res);
-      pdfDoc.text("Hello word");
+      pdfDoc.fontSize(26).text('Invoice', {
+        underline: true
+      });
+      pdfDoc.text("------------------------------------------------------");
+      let totalPrice = 0;
+      order.products.forEach(prod => {
+        totalPrice += prod.product.price * prod.quantity;
+        pdfDoc.fontSize(14).text(`${prod.product.title} - ${prod.quantity} x \$ ${prod.product.price}`);
+      });
+
+      pdfDoc.text("------------------------------------------------------");
+      pdfDoc.fontSize(26).text(`Total price: ${totalPrice}`)
       pdfDoc.end();
       /* 
       // aproach for tiny files - preloading files in memory - bad way for big files
