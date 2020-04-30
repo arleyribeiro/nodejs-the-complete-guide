@@ -8,12 +8,30 @@ const Order = require('../models/order');
 const ITEM_PER_PAGE = 2;
 
 exports.getProducts = (req, res, next) => {
+
+  const page = +req.query.page || 1;
+  const skip = (page - 1) * ITEM_PER_PAGE;
+  let totalItems = 0;
+
   Product.find()
-    .then(products => {
+  .countDocuments()
+    .then(numDocuments => {
+      totalItems = numDocuments;
+      return Product.find()
+          .skip(skip)
+          .limit(ITEM_PER_PAGE);
+    })
+    .then((products) => {
       res.render('shop/product-list', {
         prods: products,
         pageTitle: 'All Products',
-        path: '/products'
+        path: '/products',
+        currentPage: page,
+        hasNextPage: ITEM_PER_PAGE * page < totalItems,
+        hasPreviousPage: page > 1,
+        nextPage: page + 1,
+        previousPage: page - 1,
+        lastPage: Math.ceil(totalItems / ITEM_PER_PAGE)
       });
     })
     .catch(err => {
