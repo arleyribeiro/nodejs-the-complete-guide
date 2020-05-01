@@ -1,0 +1,63 @@
+<%- include('../includes/head.ejs') %>
+    <link rel="stylesheet" href="/css/forms.css">
+    <link rel="stylesheet" href="/css/product.css">
+</head>
+
+<body>
+   <%- include('../includes/navigation.ejs') %>
+
+    <main>
+        <% if (errorMessage && errorMessage.generic) { %>
+            <div class="user-message user-message--error"><%= errorMessage.generic %></div>
+        <% } %>
+        <form class="product-form" 
+            action="/admin/<%if (editing) { %>edit-product<%} else {%>add-product<%}%>" 
+            method="POST"
+            enctype="multipart/form-data">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <div class="form-control">
+                <label for="title">Title</label>
+                <input type="text" name="title" id="title" value="<%  if(editing || hasError) { %> <%= product.title %> <% } %>">
+                <% if (errorMessage && errorMessage.title) { %>
+                    <div class="message-error-inline"><%= errorMessage.title %></div>
+                <% } %>
+            </div>
+            <!-- <div class="form-control">
+                <label for="imageUrl">Image URL</label>
+                <input type="text" name="imageUrl" id="imageUrl" value="<%  if(editing || hasError) { %><%= product.imageUrl %><% } %>">
+                <% if (errorMessage && errorMessage.imageUrl) { %>
+                    <div class="message-error-inline"><%= errorMessage.imageUrl %></div>
+                <% } %>
+            </div> -->
+            <div class="form-control">
+                <label for="image">Image</label>
+                <input type="file" name="image" id="image">
+                <% if (errorMessage && errorMessage.image) { %>
+                    <div class="message-error-inline"><%= errorMessage.image %></div>
+                <% } %>
+            </div>
+            <div class="form-control">
+                <label for="price">Price</label>
+                <input type="number" name="price" id="price" step="0.01" value="<%  if(editing || hasError) { %><%=product.price%><% } %>">
+                <% if (errorMessage && errorMessage.price) { %>
+                    <div class="message-error-inline"><%= errorMessage.price %></div>
+                <% } %>
+            </div>
+            <div class="form-control">
+                <label for="description">Description</label>
+                <textarea name="description" id="description" rows="5"><%  if(editing || hasError) { %><%= product.description %><% } %></textarea>
+                <% if (errorMessage && errorMessage.description) { %>
+                    <div class="message-error-inline"><%= errorMessage.description %></div>
+                <% } %>
+            </div>
+
+            <% if (editing) {%>
+                <input type="hidden" value="<%= product._id %>" name="productId">
+            <% } %>
+
+            <button class="btn" type="submit">
+                <%  if (editing) { %> Update Product <%} else {%> Add Product <%}%>
+            </button>
+        </form>
+    </main>
+<%- include('../includes/end.ejs') %>
