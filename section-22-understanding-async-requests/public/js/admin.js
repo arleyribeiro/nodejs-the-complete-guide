@@ -2,7 +2,7 @@ const deleteProduct = (btn) => {
     console.log('clicked')
     const prodId = btn.parentNode.querySelector('[name=productId').value;
     const csrf = btn.parentNode.querySelector('[name=_csrf').value;
-		const productElement = btn.closest('article');
+	const productElement = btn.closest('article');
     fetch(`/admin/product/${prodId}`, {
 				method: 'DELETE',
 				headers: {
@@ -13,7 +13,7 @@ const deleteProduct = (btn) => {
 			return result.json();
 		})
 		.then(data => {
-			productElement.parentNode.removeClild(productElement);
+			productElement.parentNode.removeChild(productElement);
 		})
 		.catch(result => {
 			console.log(result)
