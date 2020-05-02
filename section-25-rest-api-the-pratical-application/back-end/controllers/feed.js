@@ -14,6 +14,7 @@ exports.getPosts = (req, res, next) => {
 exports.createPost = (req, res, next) => {
     const { title, content } = req.body;
     const imageUrl = 'images/sun.jpeg';
+    const creator = { name: 'dummy' }
     res.status(201).json({
         message: 'Post created successfully!',
         post: {
@@ -21,7 +22,8 @@ exports.createPost = (req, res, next) => {
             title: title,
             content: content,
             imageUrl: imageUrl,
-            author: author
+            creator: creator,
+            createdAt: new Date()
         }
     });
 };
