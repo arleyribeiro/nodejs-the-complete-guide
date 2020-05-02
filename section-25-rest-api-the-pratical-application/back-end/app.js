@@ -1,8 +1,10 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
+const path = require('path');
 
 const feedsRoutes = require('./routes/feed');
+const StatusCode = require('./constants/statusCode');
 
 const app = express();
 
@@ -10,6 +12,7 @@ const MONGODB_URI = "mongodb+srv://arley:9IaUYwLsVYJVj5RV@cluster0-mhqji.mongodb
 
 // Setup app for application/json
 app.use(bodyParser.json({ extended: true }));
+app.use('/images', express.static(path.join(__dirname, 'images')));
 
 // Set CORSS
 app.use((req, res, next) => {
@@ -21,6 +24,15 @@ app.use((req, res, next) => {
 
 // Set routes
 app.use('/feed', feedsRoutes);
+
+app.use((error, req, res, next) => {
+  console.log(error);
+  const status = error.statusCode || StatusCode.INTERNAL_SERVER_ERROR;
+  const message = error.message;
+  res.status(status).json({
+    message: message
+  });
+});
 
 mongoose
   .connect(MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
