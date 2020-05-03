@@ -2,6 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 const path = require('path');
+const multer = require('multer');
 
 const feedsRoutes = require('./routes/feed');
 const StatusCode = require('./constants/statusCode');
@@ -10,8 +11,33 @@ const app = express();
 
 const MONGODB_URI = "mongodb+srv://arley:9IaUYwLsVYJVj5RV@cluster0-mhqji.mongodb.net/postdb?retryWrites=true&w=majority";
 
+// Setup for uploading files
+const fileStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'images');
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${new Date().toISOString()}-${file.originalname}`);
+  }
+});
+
+const fileFilter = (req, file, cb) => {
+  if (file.minetype === 'image/png' || 
+      file.minetype === 'image/jpg' || 
+      file.minetype === 'image/jpeg') {
+    return cb(null, true);
+  } else {
+    cb(null, false);
+  }
+}
+
+
 // Setup app for application/json
 app.use(bodyParser.json({ extended: true }));
+app.use(multer({
+  storage: fileStorage,
+  fileFilter: fileFilter
+}).single('image'));
 app.use('/images', express.static(path.join(__dirname, 'images')));
 
 // Set CORSS

@@ -32,8 +32,15 @@ exports.createPost = (req, res, next) => {
 		error.statusCode = StatusCode.UNPRECESSABLE_ENTITY;
 		throw error;
   }
+
+  if (!req.file) {
+		const error = new Error('No image provided.');
+		error.statusCode = StatusCode.UNPRECESSABLE_ENTITY;
+		throw error;
+  }
+
   const { title, content } = req.body;
-  const imageUrl = "images/sun.jpeg";
+  const imageUrl = req.file.path;
   const creator = { name: "dummy" };
 
   const post = new Post({
