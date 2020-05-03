@@ -4,18 +4,25 @@ const Post = require("../models/post");
 const StatusCode = require('../constants/statusCode');
 
 exports.getPosts = (req, res, next) => {
-  res.status(StatusCode.OK).json({
-    posts: [
-      {
-        _id: 1,
-        title: "This a dummy data",
-        content: "dummy",
-        creator: { name: "dummy" },
-        imageUrl: "images/sun.jpeg",
-        createdAt: new Date()
+
+  Post.find()
+    .then(posts => {
+      if (!posts) {
+        const error = new Error('Not found');
+        throw error;
       }
-    ]
-  });
+      res.status(StatusCode.OK)
+        .json({
+          message: 'Fetched posts successfully.',
+          posts: posts
+        })
+    })
+    .catch(err => {
+      if (!err.statusCode) {
+        err.statusCode = StatusCode.INTERNAL_SERVER_ERROR;
+      }
+      next(err);
+    });
 };
 
 exports.createPost = (req, res, next) => {
@@ -51,6 +58,28 @@ exports.createPost = (req, res, next) => {
 			next(err);
     });
 };
+
+exports.getPost = (req, res, next) => {
+  const postId = req.params.postId;
+  Post.findById(postId)
+  .then(post => {
+    if (!post) {
+      const error = new Error('Could not find post');
+      error.statusCode = StatusCode.NOT_FOUND;
+      throw error;
+    }
+    res.status(StatusCode.OK).json({
+      message: 'Post fetched',
+      post: post
+    });
+  })
+  .catch(err => {
+    if (!err.statusCode) {
+      err.statusCode = StatusCode.INTERNAL_SERVER_ERROR;
+    }
+    next(err);
+  });
+}
 
 exports.createPostValidator = () => {
   return [

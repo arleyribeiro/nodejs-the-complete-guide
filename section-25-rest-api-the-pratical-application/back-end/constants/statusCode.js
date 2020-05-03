@@ -5,6 +5,7 @@ const accepted = 202;
 const badRequest = 400;
 const unauthorized = 401;
 const forbidden = 403;
+const notFound = 404;
 const unprecessableEntity = 422;
 
 const internalServerError = 500;
@@ -40,6 +41,10 @@ class StatusCode {
 
   static get INTERNAL_SERVER_ERROR() {
     return internalServerError;
+  }
+
+  static get NOT_FOUND() {
+    return notFound;
   }
 }
 
