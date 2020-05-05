@@ -22,7 +22,7 @@ const notFoundError = (data, message) => {
   }
 };
 
-const internalServerError = err => {
+const internalServerError = (err, next) => {
   if (!err.statusCode) {
     err.statusCode = StatusCode.INTERNAL_SERVER_ERROR;
   }
@@ -55,7 +55,7 @@ exports.getPosts = (req, res, next) => {
         })
     })
     .catch(err => {
-      internalServerError(err);
+      internalServerError(err, next);
     });
 };
 
@@ -80,7 +80,7 @@ exports.createPost = (req, res, next) => {
       resPost(res, "Post created successfully!", StatusCode.CREATED, result);
     })
     .catch(err => {
-      internalServerError(err);
+      internalServerError(err, next);
     });
 };
 
@@ -92,7 +92,7 @@ exports.getPost = (req, res, next) => {
     resPost(res, "Post fetched.", StatusCode.OK, post);
   })
   .catch(err => {
-    internalServerError(err);
+    internalServerError(err, next);
   });
 }
 
@@ -123,8 +123,24 @@ exports.updatePost = (req, res, next) => {
     resPost(res, "Post updated!", StatusCode.OK, result);
   })
   .catch(err => {
-    internalServerError(err);
+    internalServerError(err, next);
   });
+};
+
+exports.deletePost = (req, res, next) => {
+  const postId = req.params.postId;
+  Post.findById(postId)
+    .then(post => {
+      notFoundError(post, 'Could not find post');
+      clearImage(post.imageUrl);
+      return Post.findByIdAndDelete(postId);
+    })
+    .then(result => {
+      resPost(res, 'Deleted post.', StatusCode.OK);
+    })
+    .catch(err => {
+      internalServerError(err, next);
+    });
 };
 
 const clearImage = filePath => {
