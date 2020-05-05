@@ -1,33 +1,10 @@
-const { validationResult, body } = require("express-validator");
+const { body } = require("express-validator");
 const fs = require('fs');
 const path = require('path');
 
 const Post = require("../models/post");
 const StatusCode = require('../constants/statusCode');
-
-const validationResultPost = (req) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-		const error = new Error('Validation failed, entered data is incorrect.');
-		error.statusCode = StatusCode.UNPRECESSABLE_ENTITY;
-		throw error;
-  }
-};
-
-const validateDataError = (data, message, statusCode) => {
-  if (!data) {
-    const error = new Error(message);
-    error.statusCode = statusCode;
-    throw error;
-  }
-};
-
-const internalServerError = (err, next) => {
-  if (!err.statusCode) {
-    err.statusCode = StatusCode.INTERNAL_SERVER_ERROR;
-  }
-  next(err);
-};
+const ValidationHelper = require('../util/validationHelper');
 
 exports.getPosts = (req, res, next) => {
   const currentPage = req.query.page || 1;
@@ -45,7 +22,7 @@ exports.getPosts = (req, res, next) => {
     
   })
     .then(posts => {
-      validateDataError(posts, 'Could not find post', StatusCode.NOT_FOUND);
+      ValidationHelper.validateDataError(posts, 'Could not find post', StatusCode.NOT_FOUND);
       res.status(StatusCode.OK)
         .json({
           message: 'Fetched posts successfully.',
@@ -54,13 +31,13 @@ exports.getPosts = (req, res, next) => {
         })
     })
     .catch(err => {
-      internalServerError(err, next);
+      ValidationHelper.internalServerError(err, next);
     });
 };
 
 exports.createPost = (req, res, next) => {
-  validationResultPost(req);
-  validateDataError(req.file);
+  ValidationHelper.validationResult(req, 'Validation failed, entered data is incorrect.');
+  ValidationHelper.validateDataError(req.file);
 
   const { title, content } = req.body;
   const imageUrl = req.file.path;
@@ -82,7 +59,7 @@ exports.createPost = (req, res, next) => {
       });
     })
     .catch(err => {
-      internalServerError(err, next);
+      ValidationHelper.internalServerError(err, next);
     });
 };
 
@@ -90,19 +67,19 @@ exports.getPost = (req, res, next) => {
   const postId = req.params.postId;
   Post.findById(postId)
   .then(post => {
-    validateDataError(post, 'Could not find post', StatusCode.NOT_FOUND);
+    ValidationHelper.validateDataError(post, 'Could not find post', StatusCode.NOT_FOUND);
     res.status(StatusCode.OK).json({ 
       message: "Post fetched!", 
       post: post 
     });
   })
   .catch(err => {
-    internalServerError(err, next);
+    ValidationHelper.internalServerError(err, next);
   });
 }
 
 exports.updatePost = (req, res, next) => {
-  validationResultPost(req);
+  ValidationHelper.validationResult(req, 'Validation failed, entered data is incorrect.');
 
   const { title, content, image, creator } = req.body;
   const imageUrl = image;
@@ -110,11 +87,11 @@ exports.updatePost = (req, res, next) => {
     imageUrl = req.file.path;
   }
 
-  validateDataError(imageUrl, 'No image picked', StatusCode.UNPRECESSABLE_ENTITY);
+  ValidationHelper.validateDataError(imageUrl, 'No image picked', StatusCode.UNPRECESSABLE_ENTITY);
 
   Post.findById(postId)
   .then(post => {
-    validateDataError(post, 'Could not find post', StatusCode.NOT_FOUND);
+    ValidationHelper.validateDataError(post, 'Could not find post', StatusCode.NOT_FOUND);
 
     if (imageUrl != post.imageUrl) {
       clearImage(post.imageUrl);
@@ -131,7 +108,7 @@ exports.updatePost = (req, res, next) => {
     });
   })
   .catch(err => {
-    internalServerError(err, next);
+    ValidationHelper.internalServerError(err, next);
   });
 };
 
@@ -139,7 +116,7 @@ exports.deletePost = (req, res, next) => {
   const postId = req.params.postId;
   Post.findById(postId)
     .then(post => {
-      validateDataError(post, 'Could not find post', StatusCode.NOT_FOUND);
+      ValidationHelper.validateDataError(post, 'Could not find post', StatusCode.NOT_FOUND);
       clearImage(post.imageUrl);
       return Post.findByIdAndDelete(postId);
     })
@@ -149,7 +126,7 @@ exports.deletePost = (req, res, next) => {
       });
     })
     .catch(err => {
-      internalServerError(err, next);
+      ValidationHelper.internalServerError(err, next);
     });
 };
 

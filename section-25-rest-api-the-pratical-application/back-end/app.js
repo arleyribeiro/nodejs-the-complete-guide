@@ -5,6 +5,7 @@ const path = require('path');
 const multer = require('multer');
 
 const feedsRoutes = require('./routes/feed');
+const authRoutes = require('./routes/auth');
 const StatusCode = require('./constants/statusCode');
 
 const app = express();
@@ -50,13 +51,16 @@ app.use((req, res, next) => {
 
 // Set routes
 app.use('/feed', feedsRoutes);
+app.use('/auth', authRoutes);
 
 app.use((error, req, res, next) => {
   console.log(error);
   const status = error.statusCode || StatusCode.INTERNAL_SERVER_ERROR;
   const message = error.message;
+  const data = error.data;
   res.status(status).json({
-    message: message
+    message: message,
+    data: data
   });
 });
 
