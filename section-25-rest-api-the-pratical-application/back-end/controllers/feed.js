@@ -1,4 +1,6 @@
 const { validationResult, body } = require("express-validator");
+const fs = require('fs');
+const path = require('path');
 
 const Post = require("../models/post");
 const StatusCode = require('../constants/statusCode');
@@ -25,13 +27,39 @@ exports.getPosts = (req, res, next) => {
     });
 };
 
-exports.createPost = (req, res, next) => {
+const validationResultPost = (req) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
 		const error = new Error('Validation failed, entered data is incorrect.');
 		error.statusCode = StatusCode.UNPRECESSABLE_ENTITY;
 		throw error;
   }
+};
+
+const postNotFoundError = (post) => {
+  if (!post) {
+    const error = new Error('Could not find post');
+    error.statusCode = StatusCode.NOT_FOUND;
+    throw error;
+  }
+};
+
+const internalServerError = err => {
+  if (!err.statusCode) {
+    err.statusCode = StatusCode.INTERNAL_SERVER_ERROR;
+  }
+  next(err);
+};
+
+const resPost = (res, message, statusCode, result) => {
+  res.status(statusCode).json({
+    message: message,
+    post: result
+  });
+};
+
+exports.createPost = (req, res, next) => {
+  validationResultPost(req);
 
   if (!req.file) {
 		const error = new Error('No image provided.');
@@ -53,16 +81,10 @@ exports.createPost = (req, res, next) => {
   post
     .save()
     .then(result => {
-      res.status(StatusCode.CREATED).json({
-        message: "Post created successfully!",
-        post: result
-      });
+      resPost(res, "Post created successfully!", StatusCode.CREATED, result);
     })
     .catch(err => {
-			if (!err.statusCode) {
-				err.statusCode = StatusCode.INTERNAL_SERVER_ERROR;
-			}
-			next(err);
+      internalServerError(err);
     });
 };
 
@@ -70,25 +92,55 @@ exports.getPost = (req, res, next) => {
   const postId = req.params.postId;
   Post.findById(postId)
   .then(post => {
-    if (!post) {
-      const error = new Error('Could not find post');
-      error.statusCode = StatusCode.NOT_FOUND;
-      throw error;
-    }
-    res.status(StatusCode.OK).json({
-      message: 'Post fetched',
-      post: post
-    });
+    postNotFoundError(post);
+    resPost(res, "Post fetched.", StatusCode.OK, post);
   })
   .catch(err => {
-    if (!err.statusCode) {
-      err.statusCode = StatusCode.INTERNAL_SERVER_ERROR;
-    }
-    next(err);
+    internalServerError(err);
   });
 }
 
-exports.createPostValidator = () => {
+exports.updatePost = (req, res, next) => {
+  validationResultPost(req);
+
+  const { title, content, image, creator } = req.body;
+  const imageUrl = image;
+  if (req.file) {
+    imageUrl = req.file.path;
+  }
+
+  if (!imageUrl) {
+    const error = new Error('No image picked.');
+    error.statusCode = StatusCode.UNPRECESSABLE_ENTITY;
+    throw error;
+  }
+
+  Post.findById(postId)
+  .then(post => {
+    postNotFoundError(post);
+
+    if (imageUrl != post.imageUrl) {
+      clearImage(post.imageUrl);
+    }
+    post.title = title;
+    post.imageUrl = imageUrl;
+    post.content = content;
+    return post.save();
+  })
+  .then(result => {
+    resPost(res, "Post updated!", StatusCode.OK, result);
+  })
+  .catch(err => {
+    internalServerError(err);
+  });
+};
+
+const clearImage = filePath => {
+  filePath = path.join(__dirname, '..', filePath);
+  fs.unlink(filePath, err => console.log(err));
+};
+
+exports.PostValidator = () => {
   return [
     body("title", "title invalid")
       .isString()
