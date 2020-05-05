@@ -5,28 +5,6 @@ const path = require('path');
 const Post = require("../models/post");
 const StatusCode = require('../constants/statusCode');
 
-exports.getPosts = (req, res, next) => {
-
-  Post.find()
-    .then(posts => {
-      if (!posts) {
-        const error = new Error('Not found');
-        throw error;
-      }
-      res.status(StatusCode.OK)
-        .json({
-          message: 'Fetched posts successfully.',
-          posts: posts
-        })
-    })
-    .catch(err => {
-      if (!err.statusCode) {
-        err.statusCode = StatusCode.INTERNAL_SERVER_ERROR;
-      }
-      next(err);
-    });
-};
-
 const validationResultPost = (req) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -36,9 +14,9 @@ const validationResultPost = (req) => {
   }
 };
 
-const postNotFoundError = (post) => {
-  if (!post) {
-    const error = new Error('Could not find post');
+const notFoundError = (data, message) => {
+  if (!data) {
+    const error = new Error(message);
     error.statusCode = StatusCode.NOT_FOUND;
     throw error;
   }
@@ -58,14 +36,32 @@ const resPost = (res, message, statusCode, result) => {
   });
 };
 
-exports.createPost = (req, res, next) => {
-  validationResultPost(req);
-
-  if (!req.file) {
+const validateFileError = (file) => {
+  if (!file) {
 		const error = new Error('No image provided.');
 		error.statusCode = StatusCode.UNPRECESSABLE_ENTITY;
 		throw error;
   }
+};
+
+exports.getPosts = (req, res, next) => {
+  Post.find()
+    .then(posts => {
+      notFoundError(posts, 'Could not find post');
+      res.status(StatusCode.OK)
+        .json({
+          message: 'Fetched posts successfully.',
+          posts: posts
+        })
+    })
+    .catch(err => {
+      internalServerError(err);
+    });
+};
+
+exports.createPost = (req, res, next) => {
+  validationResultPost(req);
+  validateFileError(req.file);
 
   const { title, content } = req.body;
   const imageUrl = req.file.path;
@@ -92,7 +88,7 @@ exports.getPost = (req, res, next) => {
   const postId = req.params.postId;
   Post.findById(postId)
   .then(post => {
-    postNotFoundError(post);
+    notFoundError(post, 'Could not find post');
     resPost(res, "Post fetched.", StatusCode.OK, post);
   })
   .catch(err => {
@@ -109,15 +105,11 @@ exports.updatePost = (req, res, next) => {
     imageUrl = req.file.path;
   }
 
-  if (!imageUrl) {
-    const error = new Error('No image picked.');
-    error.statusCode = StatusCode.UNPRECESSABLE_ENTITY;
-    throw error;
-  }
+  validateFileError(imageUrl);
 
   Post.findById(postId)
   .then(post => {
-    postNotFoundError(post);
+    notFoundError(post, 'Could not find post');
 
     if (imageUrl != post.imageUrl) {
       clearImage(post.imageUrl);
