@@ -1,4 +1,5 @@
 const { body } = require("express-validator");
+const bcrypt = require('bcryptjs');
 
 const User = require('../models/user');
 const ValidationHelper = require('../util/validationHelper');
@@ -8,19 +9,24 @@ exports.signUp = (req, res, next) => {
   ValidationHelper.validationResult(req, 'validation failed');
   const { email, name, password } = req.body;
 
-  const user = new User();
-  user.email = email;
-  user.name = name;
-  user.password = password;
-  user.save()
-    .then(user => {
-      res.status(StatusCode.OK).json({
 
-      });
-    })
-    .catch(err => {
-      ValidationHelper.internalServerError(err, next);
+  bcrypt.hash(password, 12)
+  .then(hashPassword => {
+    const user = new User();
+    user.email = email;
+    user.name = name;
+    user.password = hashPassword;
+    return user.save();
+  })
+  .then(result => {
+    res.status(StatusCode.CREATED).json({
+      message: 'user created',
+      userId: result._id
     });
+  })
+  .catch(err => {
+    ValidationHelper.internalServerError(err, next);
+  });
 };
 
 exports.userValidator = () => {
@@ -44,7 +50,5 @@ exports.userValidator = () => {
       .trim()
       .not()
       .isEmpty()
-  
-
   ];
 };
