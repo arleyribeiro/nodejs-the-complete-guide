@@ -103,6 +103,10 @@ exports.updatePost = (req, res, next) => {
   .then(post => {
     ValidationHelper.validateDataError(post, 'Could not find post', StatusCode.NOT_FOUND);
 
+    if (post.creator.toString() !== req.userId.toString()) {
+      ValidationHelper.validateDataError(null, 'Not authorized!', StatusCode.FORBIDDEN);
+    }
+
     if (imageUrl != post.imageUrl) {
       clearImage(post.imageUrl);
     }
@@ -127,6 +131,11 @@ exports.deletePost = (req, res, next) => {
   Post.findById(postId)
     .then(post => {
       ValidationHelper.validateDataError(post, 'Could not find post', StatusCode.NOT_FOUND);
+      
+      if (post.creator.toString() !== req.userId.toString()) {
+        ValidationHelper.validateDataError(null, 'Not authorized!', StatusCode.FORBIDDEN);
+      }
+
       clearImage(post.imageUrl);
       return Post.findByIdAndDelete(postId);
     })
