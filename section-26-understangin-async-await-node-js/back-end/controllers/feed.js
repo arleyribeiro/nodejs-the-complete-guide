@@ -7,36 +7,32 @@ const StatusCode = require('../constants/statusCode');
 const ValidationHelper = require('../util/validationHelper');
 const User = require('../models/user');
 
-exports.getPosts = (req, res, next) => {
+exports.getPosts = async (req, res, next) => {
   const currentPage = req.query.page || 1;
-  const perPage = 2;
-  let totalItems;
-  Post.find()
-  .countDocuments()
-  .then(count => {
-    totalItems = count;
+  try {    
+    const perPage = 2;
     const skip = (currentPage - 1) * perPage;
-    return Post
-            .find()
-            .skip(skip)
-            .limit(perPage);
-    
-  })
-    .then(posts => {
+    let totalItems = await Post
+                            .find()
+                            .countDocuments();
+    let posts = await Post 
+                        .find()
+                        .skip(skip)
+                        .limit(perPage);
+
       ValidationHelper.validateDataError(posts, 'Could not find post', StatusCode.NOT_FOUND);
       res.status(StatusCode.OK)
         .json({
           message: 'Fetched posts successfully.',
           posts: posts,
           totalItems: totalItems
-        })
-    })
-    .catch(err => {
+        });
+    } catch(err) {
       ValidationHelper.internalServerError(err, next);
-    });
+    }
 };
 
-exports.createPost = (req, res, next) => {
+exports.createPost = async (req, res, next) => {
   ValidationHelper.validationResult(req, 'Validation failed, entered data is incorrect.');
   ValidationHelper.validateDataError(req.file);
 
@@ -50,45 +46,39 @@ exports.createPost = (req, res, next) => {
     imageUrl: imageUrl,
     creator: req.userId
   });
-
-  post
-    .save()
-    .then(result => {
-      return User.findById(req.userId);
-    })
-    .then(user => {
+  try {
+    const result = await post.save();
+    if (result) {
+      const user = await User.findById(req.userId);
       creator = user;
       user.posts.push(post);
-      return user.save();
-    })
-    .then(result => {
+      result = await user.save();
       res.status(StatusCode.CREATED).json({ 
         message: "Post created successfully!", 
         post: post,
         creator: { _id: creator._id, name: creator.name }
       });
-    })
-    .catch(err => {
+    }
+  } catch(err) {
       ValidationHelper.internalServerError(err, next);
-    });
+  }
 };
 
-exports.getPost = (req, res, next) => {
+exports.getPost = async (req, res, next) => {
   const postId = req.params.postId;
-  Post.findById(postId)
-  .then(post => {
+  try {    
+    const post = await Post.findById(postId);
     ValidationHelper.validateDataError(post, 'Could not find post', StatusCode.NOT_FOUND);
     res.status(StatusCode.OK).json({ 
       message: "Post fetched!", 
       post: post 
-    });
-  })
-  .catch(err => {
+    });  
+  } catch(err) {
     ValidationHelper.internalServerError(err, next);
-  });
+  }
 }
 
-exports.updatePost = (req, res, next) => {
+exports.updatePost = async (req, res, next) => {
   ValidationHelper.validationResult(req, 'Validation failed, entered data is incorrect.');
 
   const { title, content, image, creator } = req.body;
@@ -96,11 +86,10 @@ exports.updatePost = (req, res, next) => {
   if (req.file) {
     imageUrl = req.file.path;
   }
+  try {
+    ValidationHelper.validateDataError(imageUrl, 'No image picked', StatusCode.UNPRECESSABLE_ENTITY);
+    const post = await Post.findById(postId);
 
-  ValidationHelper.validateDataError(imageUrl, 'No image picked', StatusCode.UNPRECESSABLE_ENTITY);
-
-  Post.findById(postId)
-  .then(post => {
     ValidationHelper.validateDataError(post, 'Could not find post', StatusCode.NOT_FOUND);
 
     if (post.creator.toString() !== req.userId.toString()) {
@@ -110,50 +99,42 @@ exports.updatePost = (req, res, next) => {
     if (imageUrl != post.imageUrl) {
       clearImage(post.imageUrl);
     }
+
     post.title = title;
     post.imageUrl = imageUrl;
     post.content = content;
-    return post.save();
-  })
-  .then(result => {
+    const result = await post.save();
+    
     res.status(StatusCode.OK).json({ 
       message: "Post updated!", 
       post: result 
     });
-  })
-  .catch(err => {
+  } catch(err) {
     ValidationHelper.internalServerError(err, next);
-  });
+  }
 };
 
-exports.deletePost = (req, res, next) => {
+exports.deletePost = async (req, res, next) => {
   const postId = req.params.postId;
-  Post.findById(postId)
-    .then(post => {
-      ValidationHelper.validateDataError(post, 'Could not find post', StatusCode.NOT_FOUND);
-      
-      if (post.creator.toString() !== req.userId.toString()) {
-        ValidationHelper.validateDataError(null, 'Not authorized!', StatusCode.FORBIDDEN);
-      }
+  try {
+    const post = await Post.findById(postId);
+    ValidationHelper.validateDataError(post, 'Could not find post', StatusCode.NOT_FOUND);
 
-      clearImage(post.imageUrl);
-      return Post.findByIdAndDelete(postId);
-    })
-    .then(result => {
-      return User.findById(req.userId);
-    })
-    .then(user => {
-      user.post.pull(postId);
-      return user.save();
-    })
-    .then(result => {
-      res.status(StatusCode.OK).json({ 
-        message: "Deleted post!"
-      });
-    })
-    .catch(err => {
-      ValidationHelper.internalServerError(err, next);
+    if (post.creator.toString() !== req.userId.toString()) {
+      ValidationHelper.validateDataError(null, 'Not authorized!', StatusCode.FORBIDDEN);
+    }  
+    
+    clearImage(post.imageUrl);
+    let result = await Post.findByIdAndDelete(postId);
+    const user = await User.findById(req.userId);
+    user.post.pull(postId);
+    result = await user.save();
+    res.status(StatusCode.OK).json({ 
+      message: "Deleted post!"
     });
+  } catch (err) {
+    ValidationHelper.internalServerError(err, next);
+  }
 };
 
 const clearImage = filePath => {
