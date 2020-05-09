@@ -50,13 +50,12 @@ exports.createPost = async (req, res, next) => {
     const result = await post.save();
     if (result) {
       const user = await User.findById(req.userId);
-      creator = user;
       user.posts.push(post);
       result = await user.save();
       res.status(StatusCode.CREATED).json({ 
         message: "Post created successfully!", 
         post: post,
-        creator: { _id: creator._id, name: creator.name }
+        creator: { _id: user._id, name: user.name }
       });
     }
   } catch(err) {
@@ -123,7 +122,7 @@ exports.deletePost = async (req, res, next) => {
     if (post.creator.toString() !== req.userId.toString()) {
       ValidationHelper.validateDataError(null, 'Not authorized!', StatusCode.FORBIDDEN);
     }  
-    
+
     clearImage(post.imageUrl);
     let result = await Post.findByIdAndDelete(postId);
     const user = await User.findById(req.userId);

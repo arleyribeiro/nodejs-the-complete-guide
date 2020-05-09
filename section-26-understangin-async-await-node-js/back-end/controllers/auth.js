@@ -6,59 +6,51 @@ const User = require('../models/user');
 const ValidationHelper = require('../util/validationHelper');
 const StatusCode = require('../constants/statusCode');
 
-exports.signUp = (req, res, next) => {
+exports.signUp = async (req, res, next) => {
   ValidationHelper.validationResult(req, 'validation failed');
   const { email, name, password } = req.body;
-
-
-  bcrypt.hash(password, 12)
-  .then(hashPassword => {
+  try{
+    const hashPassword = await bcrypt.hash(password, 12);
     const user = new User();
     user.email = email;
     user.name = name;
     user.password = hashPassword;
-    return user.save();
-  })
-  .then(result => {
+    await user.save();
     res.status(StatusCode.CREATED).json({
       message: 'user created',
       userId: result._id
     });
-  })
-  .catch(err => {
+  } catch(err) {
     ValidationHelper.internalServerError(err, next);
-  });
+  }
 };
 
-exports.login = (req, res, next) => {
+exports.login = async (req, res, next) => {
   ValidationHelper.validationResult(req);
 
   const { email, password } = req.body;
   let loadedUser;
-  User.findOne({ email: email })
-    .then(user => {
-      ValidationHelper.validateDataError(user, 'A user with this email could not be found.', StatusCode.NOT_FOUND);
-      loadedUser = user;
-      return bcrypt.compare(password, user.password);
-    })
-    .then(isEqual => {
-      ValidationHelper.validateDataError(isEqual, 'Wrong password', StatusCode.UNAUTHORIZED);
-      const token = jwt.sign({
+  try {
+    const user = await User.findOne({ email: email })
+    ValidationHelper.validateDataError(user, 'A user with this email could not be found.', StatusCode.NOT_FOUND);
+    loadedUser = user;
+    const isEqual = await bcrypt.compare(password, user.password);
+    ValidationHelper.validateDataError(isEqual, 'Wrong password', StatusCode.UNAUTHORIZED);
+    const token = jwt.sign({
         email: loadedUser.email,
         userId: loadedUser._id.toString()        
       }, 
       'somesupersecret',
-      { expiresIn: '1h'});
-      
-      res.status(StatusCode.OK).json({
-        message: 'Logged with successfully',
-        token: token
-      });
-
-    })
-    .catch(err => {
-      ValidationHelper.internalServerError(err);
+      { expiresIn: '1h'}
+    );
+    
+    res.status(StatusCode.OK).json({
+      message: 'Logged with successfully',
+      token: token
     });
+  } catch(err) {
+    ValidationHelper.internalServerError(err);
+  }
 
 }
 
