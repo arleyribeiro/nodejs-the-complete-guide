@@ -51,7 +51,34 @@ exports.login = async (req, res, next) => {
   } catch(err) {
     ValidationHelper.internalServerError(err);
   }
+}
 
+exports.getUserStatus = async (req, res, next) => {
+  try {    
+    const user = await User.findById(req.userId);
+    ValidationHelper.validateDataError(user, 'User not found!', StatusCode.NOT_FOUND);
+    res.status(StatusCode.OK).json({
+      status: user.status
+    });
+  } catch (err) {
+    ValidationHelper.internalServerError(err, next);
+  }
+}
+
+exports.updateUserStatus = async (req, res, next) => {
+  try {    
+    ValidationHelper.validationResult(req, 'Please enter a valid status.');
+    const newStatus = req.body.status;
+    const user = User.findById(req.userId);
+    ValidationHelper.validateDataError(user, 'User not found!', StatusCode.NOT_FOUND);
+    user.status = newStatus;
+    await user.save();
+    res.status(StatusCode.OK).json({
+      message: 'User updated.'
+    });
+  } catch (err) {
+    ValidationHelper.internalServerError(err, next);
+  }
 }
 
 exports.userValidator = () => {
@@ -87,5 +114,14 @@ exports.loginValidator = () => {
     body('password')
       .trim()
       .isLength({ min: 3})
+  ];
+}
+
+exports.statusValidator = () => {
+  return [
+    body('status')
+    .isString()
+    .isLength({ min: 2 })
+    .withMessage('Please enter a valid status.')
   ];
 }
