@@ -19,6 +19,7 @@ exports.getPosts = async (req, res, next) => {
     let posts = await Post 
                         .find()
                         .populate('creator')
+                        .sort({ createdAt: -1})
                         .skip(skip)
                         .limit(perPage);
 
