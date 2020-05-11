@@ -89,11 +89,11 @@ exports.updatePost = async (req, res, next) => {
       imageUrl = req.file.path;
     }
     ValidationHelper.validateDataError(imageUrl, 'No image picked', StatusCode.UNPRECESSABLE_ENTITY);
-    const post = await Post.findById(postId);
+    const post = await Post.findById(postId).populate('creator');
 
     ValidationHelper.validateDataError(post, 'Could not find post', StatusCode.NOT_FOUND);
 
-    if (post.creator.toString() !== req.userId.toString()) {
+    if (post.creator._id.toString() !== req.userId.toString()) {
       ValidationHelper.validateDataError(null, 'Not authorized!', StatusCode.FORBIDDEN);
     }
 
@@ -105,7 +105,8 @@ exports.updatePost = async (req, res, next) => {
     post.imageUrl = imageUrl;
     post.content = content;
     const result = await post.save();
-    
+    io.getIO().emit('posts', { action: 'update', post: result });
+
     res.status(StatusCode.OK).json({ 
       message: "Post updated!", 
       post: result 
