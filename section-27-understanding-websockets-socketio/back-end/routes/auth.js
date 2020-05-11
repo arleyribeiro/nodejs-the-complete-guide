@@ -9,7 +9,7 @@ router.put('/signup', authController.userValidator(), authController.signUp);
 
 router.post('/login', authController.loginValidator(), authController.login);
 
-router.post('/status', isAuth, authController.getUserStatus);
+router.get('/status', isAuth, authController.getUserStatus);
 
 router.put('/status', isAuth, authController.statusValidator(), authController.updateUserStatus);
 

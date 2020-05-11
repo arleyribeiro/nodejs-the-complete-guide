@@ -40,7 +40,6 @@ exports.createPost = async (req, res, next) => {
 
     const { title, content } = req.body;
     const imageUrl = req.file.path;
-    let creator;
 
     const post = new Post({
       title: title,
