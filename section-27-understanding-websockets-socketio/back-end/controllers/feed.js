@@ -6,6 +6,7 @@ const Post = require("../models/post");
 const StatusCode = require('../constants/statusCode');
 const ValidationHelper = require('../util/validationHelper');
 const User = require('../models/user');
+const io = require('../socket');
 
 exports.getPosts = async (req, res, next) => {
   const currentPage = req.query.page || 1;
@@ -52,6 +53,7 @@ exports.createPost = async (req, res, next) => {
       const user = await User.findById(req.userId);
       user.posts.push(post);
       result = await user.save();
+      io.getIO().emit('posts', { action: 'create', post: post});
       res.status(StatusCode.CREATED).json({ 
         message: "Post created successfully!", 
         post: post,
