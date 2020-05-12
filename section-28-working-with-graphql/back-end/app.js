@@ -7,7 +7,7 @@ const graphqlHttp = require('express-graphql');
 
 const StatusCode = require('./constants/statusCode');
 const graphqlSchema = require('./graphql/schema');
-const graphqlResolvers = require('./graphql/resolvers');
+const graphqlResolver = require('./graphql/resolvers');
 
 const app = express();
 
@@ -52,7 +52,8 @@ app.use((req, res, next) => {
 
 app.use('/graphql', graphqlHttp({
   schema: graphqlSchema,
-  rootValue: graphqlResolvers
+  rootValue: graphqlResolver,
+  graphiql: true
 }));
 
 app.use((error, req, res, next) => {
