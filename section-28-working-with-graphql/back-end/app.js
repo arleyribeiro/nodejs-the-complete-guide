@@ -47,6 +47,11 @@ app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, GET, POST, PATCH, DELETE');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  // This a trick for graphql, browser send it a options request first
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(StatusCode.OK);
+  }
   next();
 });
 
