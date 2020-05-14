@@ -60,7 +60,7 @@ app.use('/graphql', graphqlHttp({
     }
     const data = err.originalError.data;
     const message = err.message || 'An error ocurred!';
-    const code = err.originalError.code || 500;
+    const code = err.originalError.code || StatusCode.INTERNAL_SERVER_ERROR;
     return { message: message, status: code, data: data };
   }
 }));
