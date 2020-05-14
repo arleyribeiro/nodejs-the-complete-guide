@@ -8,6 +8,10 @@ const passwordIncorrect = 'Password is incorrect.'
 const duplicateUser = 'User exists already.';
 const userNotFound = 'User not found.'
 
+const titleInvalid = 'Title is invalid.';
+const imageUrlInvalid = 'Image url no picked.';
+const contentInvalid = 'Content is invalid.';
+
 class ErrorMessage {
   static get INVALID_INPUT() {
     return invalidInput;
@@ -31,6 +35,18 @@ class ErrorMessage {
 
   static get PASSWORD_INCORRECT() {
     return passwordIncorrect;
+  }
+
+  static get TITLE_INVALID() {
+    return titleInvalid;
+  }
+
+  static get CONTENT_INVALID() {
+    return contentInvalid;
+  }
+
+  static get IMAGE_URL_INVALID() {
+    return imageUrlInvalid;
   }
 }
 
