@@ -55,13 +55,14 @@ module.exports = {
   },
 
   createPost: async function({ postInput }, req) {
+    ValidatorHelper.validateDataError(req.isAuth, ErrorMessage.UNAUTHORIZED, StatutsCode.UNAUTHORIZED);
     const errors = []
     if (validator.isEmpty(postInput.title) || !validator.isLength(postInput.title, { min: 5})) {
       errors.push({ message: ErrorMessage.TITLE_INVALID });
     }
 
     if (!validator.isEmpty(postInput.imageUrl)) {
-      erors.push({ message: ErrorMessage.IMAGE_URL_INVALID });
+      errors.push({ message: ErrorMessage.IMAGE_URL_INVALID });
     }
 
     if (validator.isEmpty(postInput.content)|| !validator.isLength(postInput.content, { min: 5})) {
@@ -75,13 +76,19 @@ module.exports = {
       throw error;
     }
 
+    const user = await User.findById(req.userId);
+
+    ValidatorHelper.validateDataError(user, ErrorMessage.USER_NOT_FOUND, StatutsCode.NOT_FOUND);
+    
     const post = new Post({
       title: postInput.title,
       content: postInput.content,
-      imageUrl: postInput.imageUrl
+      imageUrl: postInput.imageUrl,
+      creator: user
     });
-
     const createdPost = await post.save();
+    user.posts.push(createdPost);
+    await user.save();
     return { 
       ...createdPost._doc, 
       _id: createdPost._id.toString(), 

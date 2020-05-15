@@ -12,6 +12,8 @@ const titleInvalid = 'Title is invalid.';
 const imageUrlInvalid = 'Image url no picked.';
 const contentInvalid = 'Content is invalid.';
 
+const unauthorized = 'Not authenticated!';
+
 class ErrorMessage {
   static get INVALID_INPUT() {
     return invalidInput;
@@ -47,6 +49,10 @@ class ErrorMessage {
 
   static get IMAGE_URL_INVALID() {
     return imageUrlInvalid;
+  }
+
+  static get UNAUTHORIZED() {
+    return unauthorized;
   }
 }
 

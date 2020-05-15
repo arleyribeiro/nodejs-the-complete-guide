@@ -4,8 +4,10 @@ const StatusCode = require('../constants/statusCode');
 
 module.exports = (req, res, next) => {
   const authorization = req.get('Authorization');  
+
   if (!authorization) {
-    ValidationHelper.validateDataError(authorization, 'Not authenticaded.', StatusCode.UNAUTHORIZED);
+    req.isAuth = false;
+    return next();
   } 
 
   const token = authorization.split(' ')[1];
@@ -13,11 +15,15 @@ module.exports = (req, res, next) => {
   try{
     decodetoken = jwt.verify(token, 'somesupersecret');
   } catch (err) {
-    err.statusCode = 500;
-    throw err;
+    req.isAuth = false;
+    return next();
   }
 
-  ValidationHelper.validateDataError(decodetoken, 'Not authenticaded.', StatusCode.UNAUTHORIZED);
+  if (!decodetoken) {
+    req.isAuth = false;
+    return next();
+  }
+  req.isAuth = true;
   req.userId = decodetoken.userId;
   next();
 };
