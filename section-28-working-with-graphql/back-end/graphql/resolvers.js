@@ -1,25 +1,26 @@
-const bcrypt = require('bcryptjs');
-const validator = require('validator');
-const jwt = require('jsonwebtoken');
+const bcrypt = require("bcryptjs");
+const validator = require("validator");
+const jwt = require("jsonwebtoken");
 
-const StatutsCode = require('../constants/statusCode');
-const ErrorMessage = require('../constants/errorMessage');
-const ValidatorHelper = require('../util/validationHelper');
-const User = require('../models/user');
-const Post = require('../models/post');
+const StatutsCode = require("../constants/statusCode");
+const ErrorMessage = require("../constants/errorMessage");
+const ValidatorHelper = require("../util/validationHelper");
+const User = require("../models/user");
+const Post = require("../models/post");
 
-const POST_PER_PAGE = 20;
+const POST_PER_PAGE = 3;
 
 module.exports = {
   createUser: async function({ userInput }, req) {
-
-    const errors = []
+    const errors = [];
     if (!validator.isEmail(userInput.email)) {
       errors.push({ message: ErrorMessage.EMAIL_INVALID });
     }
-    if (validator.isEmpty(userInput.password) ||
-        validator.isLength(userInput.password, { min: 5})) {
-          errors.push({ message: ErrorMessage.PASSWORD_INVALID });
+    if (
+      validator.isEmpty(userInput.password) ||
+      validator.isLength(userInput.password, { min: 5 })
+    ) {
+      errors.push({ message: ErrorMessage.PASSWORD_INVALID });
     }
     if (errors.length > 0) {
       const error = new Error(ErrorMessage.INVALID_INPUT);
@@ -28,7 +29,7 @@ module.exports = {
       throw error;
     }
     const existngUser = await User.findOne({ email: userInput.email });
-    if ( existngUser) {
+    if (existngUser) {
       const error = new Error(ErrorMessage.DUPLICATE_USER);
       throw error;
     }
@@ -42,24 +43,43 @@ module.exports = {
     return { ...createdUser._doc, _id: createdUser._id.toString() };
   },
 
-  login: async function ({ email, password}) {
+  login: async function({ email, password }) {
     const user = await User.findOne({ email: email });
-    ValidatorHelper.validateDataError(user, ErrorMessage.USER_NOT_FOUND, StatutsCode.NOT_FOUND);
+    ValidatorHelper.validateDataError(
+      user,
+      ErrorMessage.USER_NOT_FOUND,
+      StatutsCode.NOT_FOUND
+    );
 
     const isEqual = await bcrypt.compare(password, user.password);
-    ValidatorHelper.validateDataError(isEqual, ErrorMessage.PASSWORD_INCORRECT, StatutsCode.NOT_FOUND);
+    ValidatorHelper.validateDataError(
+      isEqual,
+      ErrorMessage.PASSWORD_INCORRECT,
+      StatutsCode.NOT_FOUND
+    );
 
-    const token = jwt.sign({
-      userId: user._id.toString(),
-      email: user.email
-    }, 'somesupersecret', { expiresIn: '1h' });
+    const token = jwt.sign(
+      {
+        userId: user._id.toString(),
+        email: user.email
+      },
+      "somesupersecret",
+      { expiresIn: "1h" }
+    );
     return { token: token, userId: user._id.toString() };
   },
 
   createPost: async function({ postInput }, req) {
-    ValidatorHelper.validateDataError(req.isAuth, ErrorMessage.UNAUTHORIZED, StatutsCode.UNAUTHORIZED);
-    const errors = []
-    if (validator.isEmpty(postInput.title) || !validator.isLength(postInput.title, { min: 5})) {
+    ValidatorHelper.validateDataError(
+      req.isAuth,
+      ErrorMessage.UNAUTHORIZED,
+      StatutsCode.UNAUTHORIZED
+    );
+    const errors = [];
+    if (
+      validator.isEmpty(postInput.title) ||
+      !validator.isLength(postInput.title, { min: 5 })
+    ) {
       errors.push({ message: ErrorMessage.TITLE_INVALID });
     }
 
@@ -67,7 +87,10 @@ module.exports = {
       errors.push({ message: ErrorMessage.IMAGE_URL_INVALID });
     }
 
-    if (validator.isEmpty(postInput.content)|| !validator.isLength(postInput.content, { min: 5})) {
+    if (
+      validator.isEmpty(postInput.content) ||
+      !validator.isLength(postInput.content, { min: 5 })
+    ) {
       errors.push({ message: ErrorMessage.CONTENT_INVALID });
     }
 
@@ -80,8 +103,12 @@ module.exports = {
 
     const user = await User.findById(req.userId);
 
-    ValidatorHelper.validateDataError(user, ErrorMessage.USER_NOT_FOUND, StatutsCode.NOT_FOUND);
-    
+    ValidatorHelper.validateDataError(
+      user,
+      ErrorMessage.USER_NOT_FOUND,
+      StatutsCode.NOT_FOUND
+    );
+
     const post = new Post({
       title: postInput.title,
       content: postInput.content,
@@ -91,15 +118,19 @@ module.exports = {
     const createdPost = await post.save();
     user.posts.push(createdPost);
     await user.save();
-    return { 
-      ...createdPost._doc, 
-      _id: createdPost._id.toString(), 
+    return {
+      ...createdPost._doc,
+      _id: createdPost._id.toString(),
       createdAt: createdPost.createdAt.toISOString(),
       updatedAt: createdPost.updatedAt.toISOString()
-    }
+    };
   },
-  posts: async function ({ page }, req) {
-    ValidatorHelper.validateDataError(req.isAuth, ErrorMessage.UNAUTHORIZED, StatutsCode.UNAUTHORIZED);
+  posts: async function({ page }, req) {
+    ValidatorHelper.validateDataError(
+      req.isAuth,
+      ErrorMessage.UNAUTHORIZED,
+      StatutsCode.UNAUTHORIZED
+    );
     const totalPosts = await Post.find().countDocuments();
 
     page = !page ? 1 : page;
@@ -108,7 +139,7 @@ module.exports = {
       .skip(skip)
       .limit(POST_PER_PAGE)
       .sort({ createdAt: -1 })
-      .populate('creator');
+      .populate("creator");
     const result = {
       posts: posts.map(p => {
         return {
@@ -116,10 +147,42 @@ module.exports = {
           _id: p._id.toString(),
           createdAt: p.createdAt.toISOString(),
           updatedAt: p.updatedAt.toISOString()
-        }
+        };
       }),
       totalPosts: totalPosts
-    }
+    };
     return result;
+  },
+  post: async function({ id }, req) {
+    ValidatorHelper.validateDataError(
+      req.isAuth,
+      ErrorMessage.UNAUTHORIZED,
+      StatutsCode.UNAUTHORIZED
+    );
+    const errors = [];
+
+    if (!id) {
+      errors.push({ message: ErrorMessage.CONTENT_INVALID });
+    }
+
+    if (errors.length > 0) {
+      const error = new Error(ErrorMessage.INVALID_INPUT);
+      error.data = errors;
+      error.code = StatutsCode.BAD_REQUEST;
+      throw error;
+    }
+
+    const post = await Post.findById(id).populate("creator");
+    ValidatorHelper.validateDataError(
+      post,
+      ErrorMessage.NOT_FOUND,
+      StatutsCode.NOT_FOUND
+    );
+    return {
+      ...post._doc,
+      _id: post._id.toString(),
+      createdAt: post.createdAt.toISOString(),
+      updatedAt: post.updatedAt.toISOString()
+    };
   }
 };
