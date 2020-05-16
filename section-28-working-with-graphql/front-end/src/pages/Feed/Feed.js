@@ -1,13 +1,13 @@
-import React, { Component, Fragment } from 'react';
+import React, { Component, Fragment } from "react";
 
-import Post from '../../components/Feed/Post/Post';
-import Button from '../../components/Button/Button';
-import FeedEdit from '../../components/Feed/FeedEdit/FeedEdit';
-import Input from '../../components/Form/Input/Input';
-import Paginator from '../../components/Paginator/Paginator';
-import Loader from '../../components/Loader/Loader';
-import ErrorHandler from '../../components/ErrorHandler/ErrorHandler';
-import './Feed.css';
+import Post from "../../components/Feed/Post/Post";
+import Button from "../../components/Button/Button";
+import FeedEdit from "../../components/Feed/FeedEdit/FeedEdit";
+import Input from "../../components/Form/Input/Input";
+import Paginator from "../../components/Paginator/Paginator";
+import Loader from "../../components/Loader/Loader";
+import ErrorHandler from "../../components/ErrorHandler/ErrorHandler";
+import "./Feed.css";
 
 class Feed extends Component {
   state = {
@@ -15,21 +15,21 @@ class Feed extends Component {
     posts: [],
     totalPosts: 0,
     editPost: null,
-    status: '',
+    status: "",
     postPage: 1,
     postsLoading: true,
     editLoading: false
   };
 
   componentDidMount() {
-    fetch('http://localhost:8080/auth/status', {
+    fetch("http://localhost:8080/auth/status", {
       headers: {
-        Authorization: 'Bearer ' + this.props.token
+        Authorization: "Bearer " + this.props.token
       }
     })
       .then(res => {
         if (res.status !== 200) {
-          throw new Error('Failed to fetch user status.');
+          throw new Error("Failed to fetch user status.");
         }
         return res.json();
       })
@@ -39,19 +39,18 @@ class Feed extends Component {
       .catch(this.catchError);
 
     this.loadPosts();
-
   }
-  
+
   loadPosts = direction => {
     if (direction) {
       this.setState({ postsLoading: true, posts: [] });
     }
     let page = this.state.postPage;
-    if (direction === 'next') {
+    if (direction === "next") {
       page++;
       this.setState({ postPage: page });
     }
-    if (direction === 'previous') {
+    if (direction === "previous") {
       page--;
       this.setState({ postPage: page });
     }
@@ -64,17 +63,23 @@ class Feed extends Component {
               _id
               title
               content
+              imageUrl
+              creator {
+                _id
+                name
+              }
+              createdAt
             }
             totalPosts
           }
         }      
       `
-    }
-    fetch('http://localhost:8080/graphql', {
-      method: 'POST',
+    };
+    fetch("http://localhost:8080/graphql", {
+      method: "POST",
       headers: {
-        Authorization: 'Bearer ' + this.props.token,
-        'Content-Type': 'application/json'
+        Authorization: "Bearer " + this.props.token,
+        "Content-Type": "application/json"
       },
       body: JSON.stringify(graphqlQuery)
     })
@@ -83,7 +88,7 @@ class Feed extends Component {
       })
       .then(resData => {
         if (resData.errors) {
-          throw new Error('Loading post failed!');
+          throw new Error("Loading post failed!");
         }
         console.log(resData);
         this.setState({
@@ -102,11 +107,11 @@ class Feed extends Component {
 
   statusUpdateHandler = event => {
     event.preventDefault();
-    fetch('http://localhost:8080/auth/status', {
-      method: 'PATCH',
+    fetch("http://localhost:8080/auth/status", {
+      method: "PATCH",
       headers: {
-        Authorization: 'Bearer ' + this.props.token,
-        'Content-Type': 'application/json'
+        Authorization: "Bearer " + this.props.token,
+        "Content-Type": "application/json"
       },
       body: JSON.stringify({
         status: this.state.status
@@ -148,19 +153,31 @@ class Feed extends Component {
       editLoading: true
     });
     const formData = new FormData();
-    formData.append('title', postData.title);
-    formData.append('content', postData.content);
-    formData.append('image', postData.image);
-    const url = 'http://localhost:8080/graphql';
-    const method = 'POST';
+    formData.append("image", postData.image);
 
-    let graphqlQuery = {
-      query: 
-      `mutation {
+    if (this.state.editPost) {
+      formData.append("oldPath", this.state.editPost.imagePath);
+    }
+    fetch("http://localhost:8080/post-image", {
+      method: "PUT",
+      headers: {
+        Authorization: "Bearer " + this.props.token
+      },
+      body: formData
+    })
+      .then(res => res.json())
+      .then(fileResponse => {
+        const imageUrl = fileResponse.filePath;
+        debugger
+        const url = "http://localhost:8080/graphql";
+        const method = "POST";
+
+        let graphqlQuery = {
+          query: `mutation {
         createPost(postInput: {
           title: "${postData.title}", 
           content: "${postData.content}", 
-          imageUrl: "${postData.imageUrl}"
+          imageUrl: "${imageUrl}"
         }) {
           _id
           title
@@ -173,28 +190,26 @@ class Feed extends Component {
           createdAt
         }
       }`
-    }
-    
+        };
 
-    fetch(url, {
-      method: method,
-      body: JSON.stringify(graphqlQuery),
-      headers: {
-        Authorization: 'Bearer ' + this.props.token,
-        'Content-Type': 'application/json'
-      }
-    })
+        return fetch(url, {
+          method: method,
+          body: JSON.stringify(graphqlQuery),
+          headers: {
+            Authorization: "Bearer " + this.props.token,
+            "Content-Type": "application/json"
+          }
+        });
+      })
       .then(res => {
         return res.json();
       })
       .then(resData => {
         if (resData.errors && resData.errors[0].status === 422) {
-          throw new Error(
-            "Validation failed."
-          );
+          throw new Error("Validation failed.");
         }
         if (resData.errors) {
-          throw new Error('Created post failed!');
+          throw new Error("Created post failed!");
         }
         console.log(resData);
         const post = {
@@ -202,12 +217,15 @@ class Feed extends Component {
           title: resData.data.createPost.title,
           content: resData.data.createPost.content,
           creator: resData.data.createPost.creator,
-          createdAt: resData.data.createPost.createdAt
+          createdAt: resData.data.createPost.createdAt,
+          imagePath: resData.data.createPost.imageUrl
         };
         this.setState(prevState => {
           let updatedPosts = [...prevState.posts];
           if (prevState.editPost) {
-            const postIndex = prevState.posts.findIndex(p => p._id === prevState.editPost._id);
+            const postIndex = prevState.posts.findIndex(
+              p => p._id === prevState.editPost._id
+            );
             updatedPosts[postIndex] = post;
           } else {
             updatedPosts.pop();
@@ -237,15 +255,15 @@ class Feed extends Component {
 
   deletePostHandler = postId => {
     this.setState({ postsLoading: true });
-    fetch('http://localhost:8080/feed/post/' + postId, {
-      method: 'DELETE',
+    fetch("http://localhost:8080/feed/post/" + postId, {
+      method: "DELETE",
       headers: {
-        Authorization: 'Bearer ' + this.props.token
+        Authorization: "Bearer " + this.props.token
       }
     })
       .then(res => {
         if (res.status !== 200 && res.status !== 201) {
-          throw new Error('Deleting a post failed!');
+          throw new Error("Deleting a post failed!");
         }
         return res.json();
       })
@@ -303,17 +321,17 @@ class Feed extends Component {
         </section>
         <section className="feed">
           {this.state.postsLoading && (
-            <div style={{ textAlign: 'center', marginTop: '2rem' }}>
+            <div style={{ textAlign: "center", marginTop: "2rem" }}>
               <Loader />
             </div>
           )}
           {this.state.posts.length <= 0 && !this.state.postsLoading ? (
-            <p style={{ textAlign: 'center' }}>No posts found.</p>
+            <p style={{ textAlign: "center" }}>No posts found.</p>
           ) : null}
           {!this.state.postsLoading && (
             <Paginator
-              onPrevious={this.loadPosts.bind(this, 'previous')}
-              onNext={this.loadPosts.bind(this, 'next')}
+              onPrevious={this.loadPosts.bind(this, "previous")}
+              onNext={this.loadPosts.bind(this, "next")}
               lastPage={Math.ceil(this.state.totalPosts / 2)}
               currentPage={this.state.postPage}
             >
@@ -322,7 +340,7 @@ class Feed extends Component {
                   key={post._id}
                   id={post._id}
                   author={post.creator.name}
-                  date={new Date(post.createdAt).toLocaleDateString('en-US')}
+                  date={new Date(post.createdAt).toLocaleDateString("en-US")}
                   title={post.title}
                   image={post.imageUrl}
                   content={post.content}

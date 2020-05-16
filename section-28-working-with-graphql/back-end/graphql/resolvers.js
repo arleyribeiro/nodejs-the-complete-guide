@@ -8,7 +8,7 @@ const ValidatorHelper = require('../util/validationHelper');
 const User = require('../models/user');
 const Post = require('../models/post');
 
-const POST_PER_PAGE = 2;
+const POST_PER_PAGE = 20;
 
 module.exports = {
   createUser: async function({ userInput }, req) {
@@ -63,7 +63,7 @@ module.exports = {
       errors.push({ message: ErrorMessage.TITLE_INVALID });
     }
 
-    if (!validator.isEmpty(postInput.imageUrl)) {
+    if (validator.isEmpty(postInput.imageUrl)) {
       errors.push({ message: ErrorMessage.IMAGE_URL_INVALID });
     }
 
