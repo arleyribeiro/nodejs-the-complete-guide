@@ -172,12 +172,76 @@ module.exports = {
       throw error;
     }
 
-    const post = await Post.findById(id).populate("creator");
+    let post = await Post.findById(id).populate("creator");
     ValidatorHelper.validateDataError(
       post,
       ErrorMessage.NOT_FOUND,
       StatutsCode.NOT_FOUND
     );
+    return {
+      ...post._doc,
+      _id: post._id.toString(),
+      createdAt: post.createdAt.toISOString(),
+      updatedAt: post.updatedAt.toISOString()
+    };
+  },
+  updatePost: async function({ id, postInput }, req) {
+    ValidatorHelper.validateDataError(
+      req.isAuth,
+      ErrorMessage.UNAUTHORIZED,
+      StatutsCode.UNAUTHORIZED
+    );
+
+    let post = await Post.findById(id).populate('creator');
+
+    ValidatorHelper.validateDataError(
+      post,
+      ErrorMessage.NOT_FOUND,
+      StatutsCode.NOT_FOUND
+    );
+
+    const errors = [];
+    if (
+      validator.isEmpty(postInput.title) ||
+      !validator.isLength(postInput.title, { min: 5 })
+    ) {
+      errors.push({ message: ErrorMessage.TITLE_INVALID });
+    }
+
+    if (validator.isEmpty(postInput.imageUrl)) {
+      errors.push({ message: ErrorMessage.IMAGE_URL_INVALID });
+    }
+
+    if (
+      validator.isEmpty(postInput.content) ||
+      !validator.isLength(postInput.content, { min: 5 })
+    ) {
+      errors.push({ message: ErrorMessage.CONTENT_INVALID });
+    }
+
+    if (errors.length > 0) {
+      const error = new Error(ErrorMessage.INVALID_INPUT);
+      error.data = errors;
+      error.code = StatutsCode.UNPRECESSABLE_ENTITY;
+      throw error;
+    }
+
+    if (post.creator._id.toString() !== req.userId.toString()) {
+      ValidatorHelper.validateDataError(
+        req.isAuth,
+        ErrorMessage.UNAUTHORIZED,
+        StatutsCode.UNAUTHORIZED
+      );
+    }
+
+    post.title = postInput.title;
+    post.content = postInput.content;
+    
+    if(postInput.imageUrl !== 'undefined') {
+      post.imageUrl = postInput.imageUrl;      
+    }
+
+    post = await post.save();
     return {
       ...post._doc,
       _id: post._id.toString(),
