@@ -8,6 +8,8 @@ const ValidatorHelper = require('../util/validationHelper');
 const User = require('../models/user');
 const Post = require('../models/post');
 
+const POST_PER_PAGE = 2;
+
 module.exports = {
   createUser: async function({ userInput }, req) {
 
@@ -96,10 +98,15 @@ module.exports = {
       updatedAt: createdPost.updatedAt.toISOString()
     }
   },
-  posts: async function (args, req) {
+  posts: async function ({ page }, req) {
     ValidatorHelper.validateDataError(req.isAuth, ErrorMessage.UNAUTHORIZED, StatutsCode.UNAUTHORIZED);
     const totalPosts = await Post.find().countDocuments();
+
+    page = !page ? 1 : page;
+    const skip = (page - 1) * POST_PER_PAGE;
     const posts = await Post.find()
+      .skip(skip)
+      .limit(POST_PER_PAGE)
       .sort({ createdAt: -1 })
       .populate('creator');
     const result = {
