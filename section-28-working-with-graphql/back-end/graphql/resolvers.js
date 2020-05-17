@@ -283,5 +283,47 @@ module.exports = {
     user.posts.pull(id);
     await user.save();
     return true;
+  },
+  user: async function(args, req) {
+    ValidatorHelper.validateDataError(
+      req.isAuth,
+      ErrorMessage.UNAUTHORIZED,
+      StatutsCode.UNAUTHORIZED
+    );
+    const user = await User.findById(req.userId);
+
+    ValidatorHelper.validateDataError(
+      user,
+      ErrorMessage.NOT_FOUND,
+      StatutsCode.NOT_FOUND
+    );
+
+    return {
+      ...user._doc,
+      _id: user._id.toString()
+    };
+  },
+  updateStatus: async function({ status }, req) {
+    ValidatorHelper.validateDataError(
+      req.isAuth,
+      ErrorMessage.UNAUTHORIZED,
+      StatutsCode.UNAUTHORIZED
+    );
+    const user = await User.findById(req.userId);
+
+    ValidatorHelper.validateDataError(
+      user,
+      ErrorMessage.NOT_FOUND,
+      StatutsCode.NOT_FOUND
+    );
+
+    if (status) {
+      user.status = status;
+      await user.save();
+      return {
+        ...user._doc,
+        _id: user._id.toString()
+      };
+    }
   }
 };
