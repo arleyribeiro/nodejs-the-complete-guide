@@ -7,21 +7,23 @@ const ErrorMessage = require("../constants/errorMessage");
 const ValidatorHelper = require("../util/validationHelper");
 const User = require("../models/user");
 const Post = require("../models/post");
+const FunctionHelper = require('../util/functionHelper');
 
 const POST_PER_PAGE = 3;
 
 module.exports = {
   createUser: async function({ userInput }, req) {
+
     const errors = [];
     if (!validator.isEmail(userInput.email)) {
       errors.push({ message: ErrorMessage.EMAIL_INVALID });
     }
-    if (
+    /*if (
       validator.isEmpty(userInput.password) ||
       validator.isLength(userInput.password, { min: 5 })
     ) {
       errors.push({ message: ErrorMessage.PASSWORD_INVALID });
-    }
+    }*/
     if (errors.length > 0) {
       const error = new Error(ErrorMessage.INVALID_INPUT);
       error.data = errors;
@@ -248,5 +250,38 @@ module.exports = {
       createdAt: post.createdAt.toISOString(),
       updatedAt: post.updatedAt.toISOString()
     };
+  },
+  deletePost: async function({ id }, req) {
+    ValidatorHelper.validateDataError(
+      req.isAuth,
+      ErrorMessage.UNAUTHORIZED,
+      StatutsCode.UNAUTHORIZED
+    );
+
+    let post = await Post.findById(id);
+
+    ValidatorHelper.validateDataError(
+      post,
+      ErrorMessage.NOT_FOUND,
+      StatutsCode.NOT_FOUND
+    );
+
+    if (post.creator.toString() !== req.userId.toString()) {
+      ValidatorHelper.validateDataError(
+        req.isAuth,
+        ErrorMessage.UNAUTHORIZED,
+        StatutsCode.UNAUTHORIZED
+      );
+    }
+    
+    if(post.imageUrl) {
+      FunctionHelper.clearImage(post.imageUrl);   
+    }
+
+    await Post.findByIdAndRemove(id);
+    const user = await User.findById(req.userId);
+    user.posts.pull(id);
+    await user.save();
+    return true;
   }
 };
