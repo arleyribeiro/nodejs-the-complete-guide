@@ -190,7 +190,7 @@ class Feed extends Component {
     })
       .then(res => res.json())
       .then(fileResponse => {
-        const imageUrl = fileResponse.filePath;
+        const imageUrl = fileResponse.filePath || 'undefined';
 
         const url = "http://localhost:8080/graphql";
         const method = "POST";

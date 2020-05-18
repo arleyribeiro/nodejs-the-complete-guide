@@ -268,7 +268,7 @@ module.exports = {
 
     if (post.creator.toString() !== req.userId.toString()) {
       ValidatorHelper.validateDataError(
-        req.isAuth,
+        null,
         ErrorMessage.UNAUTHORIZED,
         StatutsCode.UNAUTHORIZED
       );
