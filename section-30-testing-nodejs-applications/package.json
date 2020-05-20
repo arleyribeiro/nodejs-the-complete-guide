@@ -33,7 +33,8 @@
     "pdfkit": "^0.11.0",
     "pug": "^2.0.4",
     "secure-random": "^1.1.2",
-    "sequelize": "^5.21.6"
+    "sequelize": "^5.21.6",
+    "jsonwebtoken": "^8.5.1"
   },
   "devDependencies": {
     "nodemon": "^2.0.2"
