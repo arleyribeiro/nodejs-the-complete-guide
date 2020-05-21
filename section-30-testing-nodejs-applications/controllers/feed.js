@@ -48,17 +48,19 @@ exports.createPost = async (req, res, next) => {
     creator: req.userId
   });
   try {
-    const result = await post.save();
-    if (result) {
+    let userSaved;
+    const postSaved = await post.save();
+    if (postSaved) {
       const user = await User.findById(req.userId);
       user.posts.push(post);
-      result = await user.save();
+      userSaved = await user.save();
       res.status(StatusCode.CREATED).json({ 
         message: "Post created successfully!", 
         post: post,
         creator: { _id: user._id, name: user.name }
       });
     }
+    return userSaved;
   } catch(err) {
       ValidationHelper.internalServerError(err, next);
   }
