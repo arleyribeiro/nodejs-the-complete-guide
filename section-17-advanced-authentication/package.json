@@ -20,7 +20,7 @@
     "express-handlebars": "^4.0.2",
     "mongodb": "^3.5.5",
     "mongoose": "^5.9.9",
-    "nodemailer": "^6.4.6",
+    "nodemailer": "^6.4.16",
     "pug": "^2.0.4",
     "secure-random": "^1.1.2",
     "sequelize": "^5.21.6"
